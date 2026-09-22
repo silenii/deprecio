@@ -1,0 +1,57 @@
+model_id: "iphone-15-pro"
+name: "Apple iPhone 15 Pro"
+brand: "Apple"
+chipset: "Apple A17 Pro"
+
+lineage:
+  series: "iPhone Pro"
+  tier: "Flagship"
+  predecessor_id: "iphone-14-pro"
+
+editions:
+  - edition_type: "US"
+    announced: true
+    release_date: "2023-09-22"
+    os_name: "iOS"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "eSIM only"
+      has_nfc: true
+    bundle:
+      has_charger: false
+      charger_wattage_w: null
+      has_case: false
+      has_cable: true
+    memory_variants:
+      - ram_gb: 8
+        storage_gb: 128
+        msrp_local: 999.0
+        currency: "USD"
+
+  - edition_type: "GLOBAL_EU"
+    announced: true
+    release_date: "2023-09-22"
+    os_name: "iOS"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "1x NanoSIM + eSIM"
+      has_nfc: true
+    bundle:
+      has_charger: false
+      charger_wattage_w: null
+      has_case: false
+      has_cable: true
+    memory_variants:
+      - ram_gb: 8
+        storage_gb: 128
+        msrp_local: 1199.0
+        currency: "EUR"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.022
+  expected_sweet_spot_months: 12
+  historical_plateau_rv: 0.72
