@@ -1,0 +1,43 @@
+model_id: "vivo-x200"
+name: "vivo X200"
+brand: "vivo"
+chipset: "MediaTek Dimensity 9400"
+
+lineage:
+  series: "X-Series"
+  tier: "Flagship"
+  predecessor_id: "vivo-x100"
+
+markets:
+  - market: "CN"
+    announced: true
+    release_date: "2024-10-14"
+    os_name: "OriginOS 5"
+    has_band_20: false
+    has_esim: false
+    variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp: 4299.0
+        currency: "CNY"
+      - ram_gb: 16
+        storage_gb: 512
+        msrp: 4699.0
+        currency: "CNY"
+
+  - market: "GLOBAL"
+    announced: true
+    release_date: "2024-12-15"
+    os_name: "Funtouch OS 15"
+    has_band_20: true
+    has_esim: true
+    variants:
+      - ram_gb: 16
+        storage_gb: 512
+        msrp: 999.0
+        currency: "EUR"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.050
+  expected_sweet_spot_months: 6
+  historical_plateau_rv: 0.55
