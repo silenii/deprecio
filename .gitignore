@@ -41,5 +41,7 @@ env/
 .ruff_cache/
 
 # Deprecio specific
+.env
+*.env
 raw_snapshots/
 output/
