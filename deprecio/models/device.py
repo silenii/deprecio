@@ -1,4 +1,4 @@
-"""Device and Market Data Models."""
+"""Data models for Smartphones, Regional Editions, and Hardware Specs."""
 
 from datetime import date
 from enum import Enum
@@ -13,51 +13,75 @@ class Currency(str, Enum):
     RUB = "RUB"
 
 
-class MarketType(str, Enum):
-    CN = "CN"
-    GLOBAL = "GLOBAL"
-    RU = "RU"
+class EditionType(str, Enum):
+    """Regional edition / version of the smartphone."""
+    CN = "CN"                   # Китайская версия
+    EAC_ROSTEST = "EAC_ROSTEST" # Ростест / ЕАС (официальная в РФ)
+    GLOBAL_EU = "GLOBAL_EU"     # Глобальная европейская версия
+    US = "US"                   # Версия для рынка США
+    IN = "IN"                   # Индийская версия
+    OTHER = "OTHER"             # Другой регион
+
+
+class BundleContents(BaseModel):
+    """Комплектация коробки устройства."""
+    has_charger: bool = Field(True, description="Наличие зарядного блока в коробке")
+    charger_wattage_w: Optional[int] = Field(None, description="Мощность комплектного блока (Вт)")
+    has_cable: bool = Field(True, description="Наличие кабеля зарядки")
+    has_case: bool = Field(False, description="Наличие комплектного чехла")
+    has_box: bool = Field(True, description="Наличие заводской коробки")
+
+
+class HardwareSpecs(BaseModel):
+    """Региональные аппаратные отличия."""
+    has_band_20: bool = Field(True, description="Поддержка LTE Band 20 (важно для РФ вне мегаполисов)")
+    has_band_7: bool = Field(True, description="Поддержка LTE Band 7")
+    has_band_3: bool = Field(True, description="Поддержка LTE Band 3")
+    has_esim: bool = Field(False, description="Поддержка виртуальной карты eSIM")
+    sim_slots: str = Field("2x NanoSIM", description="Конфигурация SIM (2x NanoSIM, 1x NanoSIM + eSIM, eSIM only)")
+    has_nfc: bool = Field(True, description="Наличие NFC модуля")
+    display_pwm_hz: Optional[int] = Field(None, description="Частота ШИМ дисплея (Гц)")
 
 
 class MemoryVariant(BaseModel):
-    """Specific RAM/Storage tier of a device."""
-    ram_gb: int = Field(..., description="RAM size in gigabytes")
-    storage_gb: int = Field(..., description="Internal storage size in gigabytes")
-    msrp: float = Field(..., description="Official launch retail price")
-    currency: Currency = Field(..., description="Currency of launch MSRP")
+    """Конфигурация памяти и стартовая цена."""
+    ram_gb: int = Field(..., description="Объем оперативной памяти (ГБ)")
+    storage_gb: int = Field(..., description="Объем накопителя (ГБ)")
+    msrp_local: float = Field(..., description="Официальная стартовая розничная цена")
+    currency: Currency = Field(..., description="Валюта стартовой цены")
 
 
-class MarketVariant(BaseModel):
-    """Market-specific details (CN vs Global)."""
-    market: MarketType
-    announced: bool = True
-    release_date: Optional[date] = None
-    os_name: Optional[str] = None
-    has_band_20: bool = False
-    has_esim: bool = False
-    variants: List[MemoryVariant] = Field(default_factory=list)
+class RegionalEdition(BaseModel):
+    """Региональная версия конкретной модели смартфона."""
+    edition_type: EditionType = Field(..., description="Тип версии (CN, EAC_ROSTEST, GLOBAL_EU, US, IN)")
+    announced: bool = Field(True, description="Анонсирована ли версия")
+    release_date: Optional[date] = Field(None, description="Дата старта продаж")
+    os_name: Optional[str] = Field(None, description="Предустановленная ОС/оболочка")
+    hardware: HardwareSpecs = Field(default_factory=HardwareSpecs)
+    bundle: BundleContents = Field(default_factory=BundleContents)
+    memory_variants: List[MemoryVariant] = Field(default_factory=list)
 
 
 class DeviceLineage(BaseModel):
-    """Historical context and lineage of the device."""
-    series: str = Field(..., description="e.g. X-Series, Galaxy S, Xiaomi Number")
-    tier: str = Field("Flagship", description="Flagship, Sub-flagship, Mid-range, Budget")
-    predecessor_id: Optional[str] = Field(None, description="Model ID of the previous generation")
+    """Иерархия модели и поколение."""
+    series: str = Field(..., description="Название линейки (напр. Number, Ultra, Pro)")
+    tier: str = Field("Flagship", description="Класс (Flagship, Sub-flagship, Mid-range, Budget)")
+    predecessor_id: Optional[str] = Field(None, description="Идентификатор модели прошлого поколения")
 
 
 class ForecastProfile(BaseModel):
-    """Parameters for price decay forecasting."""
-    brand_decay_monthly_rate: float = Field(0.045, description="Expected monthly depreciation %")
-    expected_sweet_spot_months: int = Field(6, description="Months until price plateau")
-    historical_plateau_rv: float = Field(0.60, description="Typical residual value at plateau (e.g. 60%)")
+    """Параметры предиктивной модели уценки."""
+    brand_decay_monthly_rate: float = Field(0.045, description="Ожидаемый темп уценки в месяц (% от текущей)")
+    expected_sweet_spot_months: int = Field(6, description="Срок выхода на ценовое плато (мес)")
+    historical_plateau_rv: float = Field(0.60, description="Типичная остаточная стоимость на плато (60% = 0.60)")
 
 
 class Device(BaseModel):
-    """Primary Device Model."""
-    model_id: str = Field(..., description="Unique slug, e.g. 'vivo-x500'")
-    name: str = Field(..., description="Full human-readable name, e.g. 'vivo X500'")
-    brand: str = Field(..., description="Brand name, e.g. 'vivo'")
-    chipset: Optional[str] = Field(None, description="SoC, e.g. 'Dimensity 9400+'")
+    """Основная модель смартфона в каталоге Deprecio."""
+    model_id: str = Field(..., description="Уникальный слаг, напр. 'brand-model'")
+    name: str = Field(..., description="Полное название модели")
+    brand: str = Field(..., description="Производитель")
+    chipset: Optional[str] = Field(None, description="Процессор / SoC")
     lineage: DeviceLineage
-    markets: List[MarketVariant] = Field(default_factory=list)
+    editions: List[RegionalEdition] = Field(default_factory=list)
     forecast_profile: Optional[ForecastProfile] = None

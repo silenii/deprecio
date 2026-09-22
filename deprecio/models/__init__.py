@@ -1,21 +1,25 @@
 """Pydantic data models for Deprecio."""
 
 from .device import (
+    BundleContents,
     Currency,
     Device,
     DeviceLineage,
+    EditionType,
     ForecastProfile,
-    MarketType,
-    MarketVariant,
+    HardwareSpecs,
     MemoryVariant,
+    RegionalEdition,
 )
 
 __all__ = [
+    "BundleContents",
     "Currency",
     "Device",
     "DeviceLineage",
+    "EditionType",
     "ForecastProfile",
-    "MarketType",
-    "MarketVariant",
+    "HardwareSpecs",
     "MemoryVariant",
+    "RegionalEdition",
 ]
