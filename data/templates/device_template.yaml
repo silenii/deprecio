@@ -1,0 +1,59 @@
+# Шаблон описания смартфона для базы данных Deprecio
+model_id: "vendor-model-name"
+name: "Производитель Модель"
+brand: "Производитель"
+chipset: "Процессор"
+
+lineage:
+  series: "Название линейки"
+  tier: "Класс (Flagship, Sub-flagship, Mid-range, Budget)"
+  predecessor_id: "id-прошлого-поколения"
+
+# Региональные версии устройства и особенности комплектации
+editions:
+  - edition_type: "CN"  # Китайская версия
+    announced: true
+    release_date: "2026-01-01"
+    os_name: "Vendor OS (CN)"
+    hardware:
+      has_band_20: false
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+    bundle:
+      has_charger: true
+      charger_wattage_w: 120
+      has_case: true
+      has_cable: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 4999.0
+        currency: "CNY"
+
+  - edition_type: "EAC_ROSTEST"  # Официальная версия для РФ / ЕАС
+    announced: false
+    release_date: null
+    os_name: "Vendor OS (Global)"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "1x NanoSIM + eSIM"
+      has_nfc: true
+    bundle:
+      has_charger: true
+      charger_wattage_w: 120
+      has_case: true
+      has_cable: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 79990.0
+        currency: "RUB"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.045
+  expected_sweet_spot_months: 6
+  historical_plateau_rv: 0.60
