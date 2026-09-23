@@ -1,0 +1,1004 @@
+[
+  {
+    "model_id": "nothing-phone-2a",
+    "name": "Nothing Phone (2a)",
+    "brand": "Nothing",
+    "chipset": "MediaTek Dimensity 7200 Pro",
+    "lineage": {
+      "series": "Nothing Phone (a)",
+      "tier": "Sub-flagship",
+      "predecessor_id": null
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2024-03-05",
+        "os_name": "Nothing OS 2.5",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": false,
+          "sim_slots": "2x NanoSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 2160
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 45,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 36990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 41990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.045,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.58
+    }
+  },
+  {
+    "model_id": "nothing-phone-2",
+    "name": "Nothing Phone (2)",
+    "brand": "Nothing",
+    "chipset": "Qualcomm Snapdragon 8+ Gen 1",
+    "lineage": {
+      "series": "Nothing Phone Number",
+      "tier": "Sub-flagship",
+      "predecessor_id": "nothing-phone-1"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2023-07-11",
+        "os_name": "Nothing OS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": false,
+          "sim_slots": "2x NanoSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 1920
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 45,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 59990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.042,
+      "expected_sweet_spot_months": 7,
+      "historical_plateau_rv": 0.55
+    }
+  },
+  {
+    "model_id": "samsung-galaxy-s24-ultra",
+    "name": "Samsung Galaxy S24 Ultra",
+    "brand": "Samsung",
+    "chipset": "Qualcomm Snapdragon 8 Gen 3 for Galaxy",
+    "lineage": {
+      "series": "Galaxy S Ultra",
+      "tier": "Flagship",
+      "predecessor_id": "samsung-galaxy-s23-ultra"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-01-31",
+        "os_name": "One UI 6.1",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 492
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 45,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 146990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.038,
+      "expected_sweet_spot_months": 8,
+      "historical_plateau_rv": 0.62
+    }
+  },
+  {
+    "model_id": "samsung-galaxy-s24",
+    "name": "Samsung Galaxy S24",
+    "brand": "Samsung",
+    "chipset": "Samsung Exynos 2400",
+    "lineage": {
+      "series": "Galaxy S",
+      "tier": "Flagship",
+      "predecessor_id": "samsung-galaxy-s23"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-01-31",
+        "os_name": "One UI 6.1",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 492
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 25,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 89990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.042,
+      "expected_sweet_spot_months": 7,
+      "historical_plateau_rv": 0.58
+    }
+  },
+  {
+    "model_id": "apple-iphone-15-pro",
+    "name": "Apple iPhone 15 Pro",
+    "brand": "Apple",
+    "chipset": "Apple A17 Pro",
+    "lineage": {
+      "series": "iPhone Pro",
+      "tier": "Flagship",
+      "predecessor_id": "apple-iphone-14-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2023-09-22",
+        "os_name": "iOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 480
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": null,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 124990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.022,
+      "expected_sweet_spot_months": 12,
+      "historical_plateau_rv": 0.72
+    }
+  },
+  {
+    "model_id": "apple-iphone-15",
+    "name": "Apple iPhone 15",
+    "brand": "Apple",
+    "chipset": "Apple A16 Bionic",
+    "lineage": {
+      "series": "iPhone Base",
+      "tier": "Flagship",
+      "predecessor_id": "apple-iphone-14"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2023-09-22",
+        "os_name": "iOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 480
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": null,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 6,
+            "storage_gb": 128,
+            "msrp_local": 89990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.024,
+      "expected_sweet_spot_months": 12,
+      "historical_plateau_rv": 0.70
+    }
+  },
+  {
+    "model_id": "apple-iphone-13",
+    "name": "Apple iPhone 13",
+    "brand": "Apple",
+    "chipset": "Apple A15 Bionic",
+    "lineage": {
+      "series": "iPhone Base",
+      "tier": "Flagship",
+      "predecessor_id": "apple-iphone-12"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2021-09-24",
+        "os_name": "iOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 610
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": null,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 4,
+            "storage_gb": 128,
+            "msrp_local": 79990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.018,
+      "expected_sweet_spot_months": 18,
+      "historical_plateau_rv": 0.50
+    }
+  },
+  {
+    "model_id": "google-pixel-8-pro",
+    "name": "Google Pixel 8 Pro",
+    "brand": "Google",
+    "chipset": "Google Tensor G3",
+    "lineage": {
+      "series": "Pixel Pro",
+      "tier": "Flagship",
+      "predecessor_id": "google-pixel-7-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2023-10-12",
+        "os_name": "Pixel UI",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 240
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 30,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 128,
+            "msrp_local": 89990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.048,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.52
+    }
+  },
+  {
+    "model_id": "xiaomi-14",
+    "name": "Xiaomi 14",
+    "brand": "Xiaomi",
+    "chipset": "Qualcomm Snapdragon 8 Gen 3",
+    "lineage": {
+      "series": "Xiaomi Number",
+      "tier": "Flagship",
+      "predecessor_id": "xiaomi-13"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-02-25",
+        "os_name": "HyperOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 2160
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 90,
+          "has_case": true,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 89990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.045,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.58
+    }
+  },
+  {
+    "model_id": "poco-f6-pro",
+    "name": "POCO F6 Pro",
+    "brand": "POCO",
+    "chipset": "Qualcomm Snapdragon 8 Gen 2",
+    "lineage": {
+      "series": "POCO F",
+      "tier": "Sub-flagship",
+      "predecessor_id": "poco-f5-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-05-23",
+        "os_name": "HyperOS for POCO",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": false,
+          "sim_slots": "2x NanoSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 3840
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 120,
+          "has_case": true,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 52990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.050,
+      "expected_sweet_spot_months": 5,
+      "historical_plateau_rv": 0.54
+    }
+  },
+  {
+    "model_id": "oneplus-12",
+    "name": "OnePlus 12",
+    "brand": "OnePlus",
+    "chipset": "Qualcomm Snapdragon 8 Gen 3",
+    "lineage": {
+      "series": "OnePlus Number",
+      "tier": "Flagship",
+      "predecessor_id": "oneplus-11"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2024-01-23",
+        "os_name": "OxygenOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 2160
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 100,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 79990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.046,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.56
+    }
+  },
+  {
+    "model_id": "realme-gt-6",
+    "name": "Realme GT 6",
+    "brand": "Realme",
+    "chipset": "Qualcomm Snapdragon 8s Gen 3",
+    "lineage": {
+      "series": "Realme GT",
+      "tier": "Sub-flagship",
+      "predecessor_id": "realme-gt-5"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-06-20",
+        "os_name": "Realme UI",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": false,
+          "sim_slots": "2x NanoSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 2160
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 120,
+          "has_case": true,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 59990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.055,
+      "expected_sweet_spot_months": 5,
+      "historical_plateau_rv": 0.52
+    }
+  },
+  {
+    "model_id": "honor-magic-6-pro",
+    "name": "Honor Magic 6 Pro",
+    "brand": "Honor",
+    "chipset": "Qualcomm Snapdragon 8 Gen 3",
+    "lineage": {
+      "series": "Magic Pro",
+      "tier": "Flagship",
+      "predecessor_id": "honor-magic-5-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-02-25",
+        "os_name": "MagicOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 4320
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 80,
+          "has_case": true,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 512,
+            "msrp_local": 109990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.044,
+      "expected_sweet_spot_months": 7,
+      "historical_plateau_rv": 0.58
+    }
+  },
+  {
+    "model_id": "nothing-phone-1",
+    "name": "Nothing Phone (1)",
+    "brand": "Nothing",
+    "chipset": "Qualcomm Snapdragon 778G+ 5G",
+    "lineage": {
+      "series": "Nothing Phone Number",
+      "tier": "Mid-range",
+      "predecessor_id": null
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2022-07-16",
+        "os_name": "Nothing OS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": false,
+          "sim_slots": "2x NanoSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 1200
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 33,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 34990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 8,
+            "storage_gb": 256,
+            "msrp_local": 38990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.045,
+      "expected_sweet_spot_months": 7,
+      "historical_plateau_rv": 0.52
+    }
+  },
+  {
+    "model_id": "apple-iphone-14-pro",
+    "name": "Apple iPhone 14 Pro",
+    "brand": "Apple",
+    "chipset": "Apple A16 Bionic",
+    "lineage": {
+      "series": "iPhone Pro",
+      "tier": "Flagship",
+      "predecessor_id": "apple-iphone-13-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2022-09-16",
+        "os_name": "iOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 480
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 27,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 6,
+            "storage_gb": 128,
+            "msrp_local": 104990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 6,
+            "storage_gb": 256,
+            "msrp_local": 114990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.024,
+      "expected_sweet_spot_months": 11,
+      "historical_plateau_rv": 0.68
+    }
+  },
+  {
+    "model_id": "apple-iphone-16-pro",
+    "name": "Apple iPhone 16 Pro",
+    "brand": "Apple",
+    "chipset": "Apple A18 Pro",
+    "lineage": {
+      "series": "iPhone Pro",
+      "tier": "Flagship",
+      "predecessor_id": "apple-iphone-15-pro"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2024-09-20",
+        "os_name": "iOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 480
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 30,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 139990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 8,
+            "storage_gb": 256,
+            "msrp_local": 154990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.022,
+      "expected_sweet_spot_months": 10,
+      "historical_plateau_rv": 0.72
+    }
+  },
+  {
+    "model_id": "samsung-galaxy-s23-ultra",
+    "name": "Samsung Galaxy S23 Ultra",
+    "brand": "Samsung",
+    "chipset": "Qualcomm Snapdragon 8 Gen 2 for Galaxy",
+    "lineage": {
+      "series": "Galaxy S Ultra",
+      "tier": "Ultra-flagship",
+      "predecessor_id": "samsung-galaxy-s22-ultra"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2023-02-17",
+        "os_name": "One UI",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 240
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 45,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 12,
+            "storage_gb": 256,
+            "msrp_local": 109990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 12,
+            "storage_gb": 512,
+            "msrp_local": 119990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.038,
+      "expected_sweet_spot_months": 8,
+      "historical_plateau_rv": 0.62
+    }
+  },
+  {
+    "model_id": "samsung-galaxy-a55-5g",
+    "name": "Samsung Galaxy A55 5G",
+    "brand": "Samsung",
+    "chipset": "Samsung Exynos 1480",
+    "lineage": {
+      "series": "Galaxy A",
+      "tier": "Mid-range",
+      "predecessor_id": "samsung-galaxy-a54"
+    },
+    "editions": [
+      {
+        "edition_type": "EAC_ROSTEST",
+        "announced": true,
+        "release_date": "2024-03-15",
+        "os_name": "One UI",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 240
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 25,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 41990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 8,
+            "storage_gb": 256,
+            "msrp_local": 46990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.042,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.58
+    }
+  },
+  {
+    "model_id": "google-pixel-7a",
+    "name": "Google Pixel 7a",
+    "brand": "Google",
+    "chipset": "Google Tensor G2",
+    "lineage": {
+      "series": "Pixel A-series",
+      "tier": "Mid-range",
+      "predecessor_id": "google-pixel-6a"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2023-05-10",
+        "os_name": "Android",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "1x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 360
+        },
+        "bundle": {
+          "has_charger": false,
+          "charger_wattage_w": 18,
+          "has_case": false,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 128,
+            "msrp_local": 44990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.039,
+      "expected_sweet_spot_months": 7,
+      "historical_plateau_rv": 0.55
+    }
+  },
+  {
+    "model_id": "xiaomi-redmi-note-13-pro-plus",
+    "name": "Xiaomi Redmi Note 13 Pro+",
+    "brand": "Xiaomi",
+    "chipset": "MediaTek Dimensity 7200 Ultra",
+    "lineage": {
+      "series": "Redmi Note Pro+",
+      "tier": "Mid-range",
+      "predecessor_id": "xiaomi-redmi-note-12-pro-plus"
+    },
+    "editions": [
+      {
+        "edition_type": "GLOBAL_EU",
+        "announced": true,
+        "release_date": "2024-01-15",
+        "os_name": "HyperOS",
+        "hardware": {
+          "has_band_20": true,
+          "has_band_7": true,
+          "has_band_3": true,
+          "has_esim": true,
+          "sim_slots": "2x NanoSIM + eSIM",
+          "has_nfc": true,
+          "display_pwm_hz": 1920
+        },
+        "bundle": {
+          "has_charger": true,
+          "charger_wattage_w": 120,
+          "has_case": true,
+          "has_cable": true,
+          "has_box": true
+        },
+        "memory_variants": [
+          {
+            "ram_gb": 8,
+            "storage_gb": 256,
+            "msrp_local": 49990.0,
+            "currency": "RUB"
+          },
+          {
+            "ram_gb": 12,
+            "storage_gb": 512,
+            "msrp_local": 54990.0,
+            "currency": "RUB"
+          }
+        ]
+      }
+    ],
+    "forecast_profile": {
+      "brand_decay_monthly_rate": 0.046,
+      "expected_sweet_spot_months": 6,
+      "historical_plateau_rv": 0.54
+    }
+  }
+]
