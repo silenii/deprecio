@@ -1,0 +1,65 @@
+model_id: "realme-gt-6"
+name: "Realme GT 6"
+brand: "Realme"
+chipset: "Qualcomm Snapdragon 8s Gen 3"
+
+lineage:
+  series: "Realme GT"
+  tier: "Sub-flagship"
+  predecessor_id: "realme-gt-5"
+
+editions:
+  - edition_type: "EAC_ROSTEST"
+    announced: true
+    release_date: "2024-06-20"
+    os_name: "Realme UI 5.0 (Global)"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+      display_pwm_hz: 2160
+    bundle:
+      has_charger: true
+      charger_wattage_w: 120
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 59990.0
+        currency: "RUB"
+      - ram_gb: 16
+        storage_gb: 512
+        msrp_local: 69990.0
+        currency: "RUB"
+
+  - edition_type: "CN"
+    announced: true
+    release_date: "2024-07-09"
+    os_name: "Realme UI (CN)"
+    hardware:
+      has_band_20: false
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+      display_pwm_hz: 2160
+    bundle:
+      has_charger: true
+      charger_wattage_w: 120
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 2799.0
+        currency: "CNY"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.055
+  expected_sweet_spot_months: 5
+  historical_plateau_rv: 0.52

@@ -1,0 +1,42 @@
+model_id: "iphone-13"
+name: "Apple iPhone 13"
+brand: "Apple"
+chipset: "Apple A15 Bionic"
+
+lineage:
+  series: "iPhone Base"
+  tier: "Flagship"
+  predecessor_id: "iphone-12"
+
+editions:
+  - edition_type: "EAC_ROSTEST"
+    announced: true
+    release_date: "2021-09-24"
+    os_name: "iOS"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "1x NanoSIM + eSIM"
+      has_nfc: true
+      display_pwm_hz: 610
+    bundle:
+      has_charger: false
+      charger_wattage_w: null
+      has_case: false
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 4
+        storage_gb: 128
+        msrp_local: 79990.0
+        currency: "RUB"
+      - ram_gb: 4
+        storage_gb: 256
+        msrp_local: 89990.0
+        currency: "RUB"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.018
+  expected_sweet_spot_months: 18
+  historical_plateau_rv: 0.50

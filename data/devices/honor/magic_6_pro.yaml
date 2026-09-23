@@ -1,0 +1,61 @@
+model_id: "honor-magic-6-pro"
+name: "Honor Magic 6 Pro"
+brand: "Honor"
+chipset: "Qualcomm Snapdragon 8 Gen 3"
+
+lineage:
+  series: "Magic Pro"
+  tier: "Flagship"
+  predecessor_id: "honor-magic-5-pro"
+
+editions:
+  - edition_type: "EAC_ROSTEST"
+    announced: true
+    release_date: "2024-02-25"
+    os_name: "MagicOS 8.0"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "2x NanoSIM + eSIM"
+      has_nfc: true
+      display_pwm_hz: 4320
+    bundle:
+      has_charger: true
+      charger_wattage_w: 80
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 512
+        msrp_local: 109990.0
+        currency: "RUB"
+
+  - edition_type: "CN"
+    announced: true
+    release_date: "2024-01-11"
+    os_name: "MagicOS (CN)"
+    hardware:
+      has_band_20: false
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+      display_pwm_hz: 4320
+    bundle:
+      has_charger: true
+      charger_wattage_w: 80
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 5699.0
+        currency: "CNY"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.044
+  expected_sweet_spot_months: 7
+  historical_plateau_rv: 0.58

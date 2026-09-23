@@ -1,0 +1,69 @@
+model_id: "oneplus-12"
+name: "OnePlus 12"
+brand: "OnePlus"
+chipset: "Qualcomm Snapdragon 8 Gen 3"
+
+lineage:
+  series: "OnePlus Number"
+  tier: "Flagship"
+  predecessor_id: "oneplus-11"
+
+editions:
+  - edition_type: "CN"
+    announced: true
+    release_date: "2023-12-05"
+    os_name: "ColorOS (CN)"
+    hardware:
+      has_band_20: false
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+      display_pwm_hz: 2160
+    bundle:
+      has_charger: true
+      charger_wattage_w: 100
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 4299.0
+        currency: "CNY"
+      - ram_gb: 16
+        storage_gb: 512
+        msrp_local: 4799.0
+        currency: "CNY"
+
+  - edition_type: "GLOBAL_EU"
+    announced: true
+    release_date: "2024-01-23"
+    os_name: "OxygenOS (Global)"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "1x NanoSIM + eSIM"
+      has_nfc: true
+      display_pwm_hz: 2160
+    bundle:
+      has_charger: true
+      charger_wattage_w: 100
+      has_case: false
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 949.0
+        currency: "EUR"
+      - ram_gb: 16
+        storage_gb: 512
+        msrp_local: 1099.0
+        currency: "EUR"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.046
+  expected_sweet_spot_months: 6
+  historical_plateau_rv: 0.56
