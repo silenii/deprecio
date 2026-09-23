@@ -376,6 +376,7 @@ class GSMArenaParser:
     @staticmethod
     def _estimate_tier(name: str) -> str:
         name_lower = name.lower()
+        words = set(name_lower.split())
         
         if any(w in name_lower for w in ["ultra", "pro max", "pro+", "pro plus", "fold", "magic v"]):
             return "Ultra-Flagship"
@@ -383,11 +384,11 @@ class GSMArenaParser:
         # Flagships (but rule out sub-flagships that just use 'Pro')
         if any(w in name_lower for w in ["pro", "plus", "+"]):
             # Exemptions: budget/midrange phones with 'Pro' (e.g. Poco X6 Pro, Redmi Note 13 Pro)
-            if any(w in name_lower for w in ["poco", "redmi", "c", "m", "y"]):
+            if any(w in name_lower for w in ["poco", "redmi"]) or any(w in words for w in ["c", "m", "y"]):
                 return "Sub-flagship"
             return "Flagship"
             
-        if any(w in name_lower for w in ["gt", "x"]):
+        if "gt" in name_lower or "x" in words:
             if "poco x" in name_lower:
                 return "Mid-range"
             return "Flagship"
@@ -395,7 +396,7 @@ class GSMArenaParser:
         if any(w in name_lower for w in ["lite", "fe", "a5", "neo"]):
             return "Sub-flagship"
             
-        if any(w in name_lower for w in ["a0", "a1", "a2", "a3", "c", "y", "spark", "smart", "pop"]):
+        if any(w in name_lower for w in ["a0", "a1", "a2", "a3", "spark", "smart", "pop"]) or any(w in words for w in ["c", "y"]):
             return "Budget"
             
         return "Mid-range"
