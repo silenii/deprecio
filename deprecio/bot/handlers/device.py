@@ -8,15 +8,14 @@ from aiogram.types import CallbackQuery, Message
 from deprecio.bot.keyboards import get_back_keyboard, get_device_card_keyboard
 from deprecio.core import analyze_sweet_spot
 from deprecio.models.device import Device, EditionType
-from deprecio.providers import LocalCatalogProvider
+from deprecio.providers import CachedSpecsProvider
 
 router = Router(name="device_router")
-catalog = LocalCatalogProvider()
+catalog = CachedSpecsProvider()
 
 
 def format_device_card(device: Device) -> str:
     """Форматирование карточки смартфона с аналитикой уценки."""
-    catalog.reload()
     lines = [
         f"📱 **{device.name}**",
         f"• **Производитель:** {device.brand}",
@@ -93,7 +92,6 @@ async def prompt_search(message: Message) -> None:
 
 @router.message(F.text == "🟢 Зона Sweet Spot")
 async def list_sweet_spot(message: Message) -> None:
-    catalog.reload()
     devices = catalog.search_devices("")
     lines = [
         "🟢 **Смартфоны в зоне Sweet Spot (идеальный момент для покупки):**\n",
@@ -226,20 +224,20 @@ async def handle_device_search(message: Message) -> None:
     if message.text.startswith("/"):
         return
 
-    catalog.reload()
-    results = catalog.search_devices(message.text)
+    # Отправляем индикатор поиска
+    status_msg = await message.answer(f"🔍 Ищу *'{message.text}'* в базе GSMArena...", parse_mode="Markdown")
 
-    if not results:
-        await message.answer(
-            f"🔍 По запросу *'{message.text}'* ничего не найдено.\n\n"
-            "Попробуйте написать, например: `Xiaomi` или `iPhone`.\n"
-            "База данных активно пополняется новыми моделями!",
+    target = await catalog.get_or_fetch_device(message.text)
+    if not target:
+        await status_msg.edit_text(
+            f"🔍 По запросу *'{message.text}'* ничего не найдено в базе GSMArena.\n\n"
+            "Попробуйте написать, например: `Galaxy S24`, `Pixel 8` или `iPhone 15`.",
             parse_mode="Markdown",
         )
         return
 
-    target = results[0]
     card_text = format_device_card(target)
+    await status_msg.delete()
     await message.answer(
         card_text,
         reply_markup=get_device_card_keyboard(target.model_id),
