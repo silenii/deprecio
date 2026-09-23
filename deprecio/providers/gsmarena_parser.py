@@ -68,9 +68,11 @@ class GSMArenaParser:
 
         # 7. Конфигурации памяти
         memory_str = specs.get("internal", "") or specs.get("memory_internal", "")
-        variants = cls._parse_memory_variants(memory_str)
+        rel_year = release_date.year if release_date else None
+        variants = cls._parse_memory_variants(memory_str, release_year=rel_year)
         if not variants:
-            variants = [MemoryVariant(ram_gb=8, storage_gb=256, msrp_local=69990.0, currency=Currency.RUB)]
+            default_msrp = 19990.0 if (rel_year and rel_year <= 2019) else 49990.0
+            variants = [MemoryVariant(ram_gb=4 if (rel_year and rel_year <= 2019) else 8, storage_gb=64 if (rel_year and rel_year <= 2019) else 128, msrp_local=default_msrp, currency=Currency.RUB)]
 
         # 8. Сборка версий (Global / EAC)
         hardware = HardwareSpecs(
@@ -116,14 +118,26 @@ class GSMArenaParser:
     def _flatten_specs(cls, raw: Dict[str, Any]) -> Dict[str, str]:
         """Приводит спецификации из разных форматов к единому плоскому словарю."""
         flat: Dict[str, str] = {}
-        # Если пришла таблица specs
+
+        # 1. Прямые ключи в raw
+        for k, v in raw.items():
+            if isinstance(v, str):
+                flat[k.lower().replace(" ", "_")] = v
+
+        # 2. Вложенный dict specifications
+        if "specifications" in raw and isinstance(raw["specifications"], dict):
+            for k, v in raw["specifications"].items():
+                if isinstance(v, str):
+                    flat[k.lower().replace(" ", "_")] = v
+
+        # 3. Если пришла таблица specs
         if "specifications_table" in raw:
             for cat, fields in raw["specifications_table"].items():
                 for k, v in fields.items():
                     flat[k] = v
                     flat[f"{cat}_{k}"] = v
 
-        # Если пришел формат API api-mobilespecs
+        # 4. Если пришел формат API api-mobilespecs
         if "specifications" in raw and isinstance(raw["specifications"], list):
             for sec in raw["specifications"]:
                 sec_title = sec.get("title", "").lower()
@@ -153,8 +167,8 @@ class GSMArenaParser:
     def _parse_launch_date(raw_date: Optional[str]) -> Optional[date]:
         if not raw_date:
             return None
-        # Поиск года (например 2024)
-        year_match = re.search(r"\b(201\d|202\d)\b", raw_date)
+        # Поиск года (от 1999 до 2029)
+        year_match = re.search(r"\b(199\d|200\d|201\d|202\d)\b", raw_date)
         if not year_match:
             return None
         year = int(year_match.group(1))
@@ -179,7 +193,7 @@ class GSMArenaParser:
         return int(match.group(1)) if match else None
 
     @staticmethod
-    def _parse_memory_variants(mem_str: str) -> List[MemoryVariant]:
+    def _parse_memory_variants(mem_str: str, release_year: Optional[int] = None) -> List[MemoryVariant]:
         """Парсит варианты памяти вида '128GB 8GB RAM, 256GB 12GB RAM'."""
         variants: List[MemoryVariant] = []
         if not mem_str:
@@ -194,8 +208,14 @@ class GSMArenaParser:
                 storage *= 1024
             ram = int(ram_num)
 
-            # Базовая оценка стартовой цены в РФ в зависимости от памяти
-            est_rub = 40000.0 + (storage / 256.0) * 25000.0
+            # Оценка исторической стартовой цены в РФ в зависимости от года выпуска
+            if release_year and release_year <= 2019:
+                est_rub = 14000.0 + (storage / 64.0) * 4000.0
+            elif release_year and release_year <= 2021:
+                est_rub = 25000.0 + (storage / 128.0) * 10000.0
+            else:
+                est_rub = 40000.0 + (storage / 256.0) * 25000.0
+
             variants.append(
                 MemoryVariant(
                     ram_gb=ram,
