@@ -69,7 +69,8 @@ class GSMArenaParser:
         # 7. Конфигурации памяти
         memory_str = specs.get("internal", "") or specs.get("memory_internal", "")
         rel_year = release_date.year if release_date else None
-        variants = cls._parse_memory_variants(memory_str, release_year=rel_year)
+        tier = cls._estimate_tier(name)
+        variants = cls._parse_memory_variants(memory_str, brand, tier, release_year=rel_year)
         if not variants:
             default_msrp = 19990.0 if (rel_year and rel_year <= 2019) else 49990.0
             variants = [MemoryVariant(ram_gb=4 if (rel_year and rel_year <= 2019) else 8, storage_gb=64 if (rel_year and rel_year <= 2019) else 128, msrp_local=default_msrp, currency=Currency.RUB)]
@@ -311,7 +312,7 @@ class GSMArenaParser:
         return int(match.group(1)) if match else None
 
     @staticmethod
-    def _parse_memory_variants(mem_str: str, release_year: Optional[int] = None) -> List[MemoryVariant]:
+    def _parse_memory_variants(mem_str: str, brand: str, tier: str, release_year: Optional[int] = None) -> List[MemoryVariant]:
         """Парсит варианты памяти вида '128GB 8GB RAM, 256GB 12GB RAM'."""
         variants: List[MemoryVariant] = []
         if not mem_str:
@@ -320,19 +321,46 @@ class GSMArenaParser:
         # Шаблон: 256GB 8GB RAM или 1TB 12GB RAM
         pattern = r"(\d+)\s*(GB|TB)\s+(\d+)\s*GB\s+RAM"
         matches = re.findall(pattern, mem_str, re.IGNORECASE)
+        
+        b_lower = brand.lower()
+        # Коэффициент бренда (Apple/Samsung стоят дороже китайских аналогов)
+        brand_coef = 1.0
+        if any(b in b_lower for b in ["apple", "samsung", "google", "sony", "asus"]):
+            brand_coef = 1.15
+        elif any(b in b_lower for b in ["xiaomi", "redmi", "poco", "realme", "infinix", "tecno", "itel"]):
+            brand_coef = 0.75
+        elif any(b in b_lower for b in ["vivo", "iqoo", "oppo", "oneplus", "honor"]):
+            brand_coef = 0.85
+
         for storage_num, unit, ram_num in matches:
             storage = int(storage_num)
             if unit.upper() == "TB":
                 storage *= 1024
             ram = int(ram_num)
 
-            # Оценка исторической стартовой цены в РФ в зависимости от года выпуска
+            # Базовая цена в зависимости от класса (tier) и года
+            base_rub = 20000.0
+            if tier == "Budget":
+                base_rub = 8000.0
+            elif tier == "Mid-range":
+                base_rub = 20000.0
+            elif tier == "Sub-flagship":
+                base_rub = 40000.0
+            elif tier == "Flagship":
+                base_rub = 70000.0
+            elif tier == "Ultra-Flagship":
+                base_rub = 100000.0
+
+            # Поправка на инфляцию/год
             if release_year and release_year <= 2019:
-                est_rub = 14000.0 + (storage / 64.0) * 4000.0
+                base_rub *= 0.5
             elif release_year and release_year <= 2021:
-                est_rub = 25000.0 + (storage / 128.0) * 10000.0
-            else:
-                est_rub = 40000.0 + (storage / 256.0) * 25000.0
+                base_rub *= 0.75
+
+            # Добавка за память (грубая оценка: +5000 за каждые 128GB сверх базовых 64)
+            storage_premium = max(0, ((storage - 64) / 128.0) * 5000.0)
+            
+            est_rub = (base_rub + storage_premium) * brand_coef
 
             variants.append(
                 MemoryVariant(
@@ -348,12 +376,28 @@ class GSMArenaParser:
     @staticmethod
     def _estimate_tier(name: str) -> str:
         name_lower = name.lower()
-        if any(w in name_lower for w in ["ultra", "pro max", "fold", "magic v"]):
+        
+        if any(w in name_lower for w in ["ultra", "pro max", "pro+", "pro plus", "fold", "magic v"]):
             return "Ultra-Flagship"
+            
+        # Flagships (but rule out sub-flagships that just use 'Pro')
         if any(w in name_lower for w in ["pro", "plus", "+"]):
+            # Exemptions: budget/midrange phones with 'Pro' (e.g. Poco X6 Pro, Redmi Note 13 Pro)
+            if any(w in name_lower for w in ["poco", "redmi", "c", "m", "y"]):
+                return "Sub-flagship"
             return "Flagship"
-        if any(w in name_lower for w in ["lite", "note", "a5", "gt"]):
+            
+        if any(w in name_lower for w in ["gt", "x"]):
+            if "poco x" in name_lower:
+                return "Mid-range"
+            return "Flagship"
+
+        if any(w in name_lower for w in ["lite", "fe", "a5", "neo"]):
             return "Sub-flagship"
+            
+        if any(w in name_lower for w in ["a0", "a1", "a2", "a3", "c", "y", "spark", "smart", "pop"]):
+            return "Budget"
+            
         return "Mid-range"
 
     @staticmethod
