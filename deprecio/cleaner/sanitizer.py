@@ -26,7 +26,7 @@ class ListingSanitizer:
             return listing
 
         # Отсечение заведомо фиктивных цен (заглушки '1 рубль', 'цена за чехол')
-        if listing.price_rub < 3000:
+        if listing.price_rub < 1000:
             listing.is_outlier = True
             listing.outlier_reason = f"Нереалистично низкая цена: {listing.price_rub} ₽"
 

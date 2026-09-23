@@ -45,4 +45,5 @@ env/
 .env
 *.env
 raw_snapshots/
+data/snapshots/
 output/
