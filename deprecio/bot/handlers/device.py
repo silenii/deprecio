@@ -218,28 +218,52 @@ async def handle_editions_callback(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("show_dev:"))
+async def handle_show_device_callback(callback: CallbackQuery) -> None:
+    model_id = callback.data.split(":")[1]
+    dev = catalog.get_device(model_id)
+    if not dev:
+        await callback.answer("Модель не найдена.")
+        return
+
+    card_text = format_device_card(dev)
+    await callback.message.edit_text(
+        card_text,
+        reply_markup=get_device_card_keyboard(dev.model_id),
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
 
 @router.message(F.text)
 async def handle_device_search(message: Message) -> None:
     if message.text.startswith("/"):
         return
 
-    # Отправляем индикатор поиска
-    status_msg = await message.answer(f"🔍 Ищу *'{message.text}'* в базе GSMArena...", parse_mode="Markdown")
+    # Индикатор поиска
+    status_msg = await message.answer(f"🔍 Ищу *'{message.text}'* в каталоге Deprecio...", parse_mode="Markdown")
 
-    target = await catalog.get_or_fetch_device(message.text)
+    matches = catalog.search_devices(message.text)
+    if not matches:
+        # Пробуем запросить из внешнего источника
+        target = await catalog.get_or_fetch_device(message.text)
+    else:
+        target = matches[0]
+
     if not target:
         await status_msg.edit_text(
-            f"🔍 По запросу *'{message.text}'* ничего не найдено в базе GSMArena.\n\n"
-            "Попробуйте написать, например: `Galaxy S24`, `Pixel 8` или `iPhone 15`.",
+            f"🔍 По запросу *'{message.text}'* ничего не найдено.\n\n"
+            "Попробуйте написать, например: `Nothing 2a`, `Galaxy S24`, `Pixel 8`, `Xiaomi 14` или `Айфон 15`.",
             parse_mode="Markdown",
         )
         return
+
+    alternatives = [(d.model_id, d.name) for d in matches[1:4]] if len(matches) > 1 else None
 
     card_text = format_device_card(target)
     await status_msg.delete()
     await message.answer(
         card_text,
-        reply_markup=get_device_card_keyboard(target.model_id),
+        reply_markup=get_device_card_keyboard(target.model_id, alternative_matches=alternatives),
         parse_mode="Markdown",
     )
