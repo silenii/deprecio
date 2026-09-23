@@ -127,6 +127,100 @@ async def handle_analogs_callback(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("forecast:"))
+async def handle_forecast_callback(callback: CallbackQuery) -> None:
+    from deprecio.forecast import generate_price_forecast
+
+    model_id = callback.data.split(":")[1]
+    dev = catalog.get_device(model_id)
+    if not dev:
+        await callback.answer("Модель не найдена.")
+        return
+
+    # Оценка стартовой цены из спецификаций
+    base_price = 80000.0
+    for ed in dev.editions:
+        if ed.memory_variants:
+            mv = ed.memory_variants[0]
+            if mv.currency.value == "RUB":
+                base_price = mv.msrp_local
+                break
+
+    report = generate_price_forecast(dev, current_price_rub=base_price, months_horizon=12)
+
+    lines = [
+        f"🔮 **Прогноз уценки: {dev.name}**\n",
+        f"• Стартовая цена (MSRP): **{base_price:,.0f} ₽**",
+        f"• Темп амортизации бренда: **{report.monthly_decay_rate * 100:.1f}% в месяц**",
+        f"• Точка входа в Sweet Spot: **через {report.sweet_spot_month} мес.**\n",
+        "📉 **Прогнозируемый график снижения цен:**",
+    ]
+
+    for p in report.points:
+        line = f"• **+{p.months_ahead} мес. ({p.target_date}):** ≈ {p.predicted_price_rub:,.0f} ₽ ({p.predicted_rv_percent}%)"
+        if p.trigger_event:
+            line += f"\n   └ {p.trigger_event}"
+        lines.append(line)
+
+    lines.extend([
+        "",
+        f"💡 **Итог:** {report.summary_verdict}",
+    ])
+
+    await callback.message.answer("\n".join(lines), reply_markup=get_back_keyboard(), parse_mode="Markdown")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("editions:"))
+async def handle_editions_callback(callback: CallbackQuery) -> None:
+    model_id = callback.data.split(":")[1]
+    dev = catalog.get_device(model_id)
+    if not dev:
+        await callback.answer("Модель не найдена.")
+        return
+
+    lines = [
+        f"⚖️ **Сравнение региональных версий: {dev.name}**\n",
+        "Различия между версиями, влияющие на цену на вторичном рынке РФ:\n",
+    ]
+
+    for ed in dev.editions:
+        edition_title = {
+            EditionType.EAC_ROSTEST: "🇷🇺 Ростест / EAC (Официальная в РФ)",
+            EditionType.CN: "🇨🇳 Китайская версия (CN)",
+            EditionType.GLOBAL_EU: "🌐 Глобальная (Global / EU)",
+            EditionType.US: "🇺🇸 Американская (US)",
+            EditionType.IN: "🇮🇳 Индийская (IN)",
+            EditionType.OTHER: "🌍 Другой регион",
+        }.get(ed.edition_type, ed.edition_type.value)
+
+        lines.append(f"📌 **{edition_title}**")
+        lines.append(f"• ОС: `{ed.os_name or 'Заводская'}`")
+        lines.append(
+            f"• Комплект: {'Блок ' + str(ed.bundle.charger_wattage_w) + 'W' if ed.bundle.has_charger else '❌ Без зарядного блока'}"
+            f"{', чехол в комплекте' if ed.bundle.has_case else ''}"
+        )
+        lines.append(
+            f"• Связь: Band 20 {'✅' if ed.hardware.has_band_20 else '❌ (хуже ловит 4G вне городов)'} | "
+            f"eSIM {'✅' if ed.hardware.has_esim else '❌'} | "
+            f"SIM: {ed.hardware.sim_slots}"
+        )
+        if ed.memory_variants:
+            mv = ed.memory_variants[0]
+            lines.append(f"• Стартовая цена: {mv.msrp_local:,.0f} {mv.currency.value}")
+        lines.append("")
+
+    lines.append(
+        "💡 **Совет по ликвидности:**\n"
+        "Китайские версии (CN) на вторичке в РФ продаются на 15–25% дешевле Ростеста "
+        "из-за китайской вилки и отсутствия Band 20. Учитывайте это при покупке и перепродаже!"
+    )
+
+    await callback.message.answer("\n".join(lines), reply_markup=get_back_keyboard(), parse_mode="Markdown")
+    await callback.answer()
+
+
+
 @router.message(F.text)
 async def handle_device_search(message: Message) -> None:
     if message.text.startswith("/"):
