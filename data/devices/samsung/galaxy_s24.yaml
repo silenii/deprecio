@@ -1,0 +1,42 @@
+model_id: "samsung-galaxy-s24"
+name: "Samsung Galaxy S24"
+brand: "Samsung"
+chipset: "Samsung Exynos 2400 / Snapdragon 8 Gen 3"
+
+lineage:
+  series: "Galaxy S"
+  tier: "Flagship"
+  predecessor_id: "samsung-galaxy-s23"
+
+editions:
+  - edition_type: "EAC_ROSTEST"
+    announced: true
+    release_date: "2024-01-31"
+    os_name: "One UI 6.1"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "2x NanoSIM + eSIM"
+      has_nfc: true
+      display_pwm_hz: 492
+    bundle:
+      has_charger: false
+      charger_wattage_w: null
+      has_case: false
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 8
+        storage_gb: 128
+        msrp_local: 89990.0
+        currency: "RUB"
+      - ram_gb: 8
+        storage_gb: 256
+        msrp_local: 97990.0
+        currency: "RUB"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.042
+  expected_sweet_spot_months: 7
+  historical_plateau_rv: 0.58
