@@ -1,0 +1,61 @@
+model_id: "honor-magic-v3"
+name: "Honor Magic V3"
+brand: "Honor"
+chipset: "Qualcomm Snapdragon 8 Gen 3"
+
+lineage:
+  series: "Magic V Foldable"
+  tier: "Flagship"
+  predecessor_id: "honor-magic-v2"
+
+editions:
+  - edition_type: "GLOBAL_EU"
+    announced: true
+    release_date: "2024-09-05"
+    os_name: "MagicOS (Global)"
+    hardware:
+      has_band_20: true
+      has_band_7: true
+      has_esim: true
+      sim_slots: "2x NanoSIM + eSIM"
+      has_nfc: true
+      display_pwm_hz: 4320
+    bundle:
+      has_charger: true
+      charger_wattage_w: 66
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 512
+        msrp_local: 1999.0
+        currency: "EUR"
+
+  - edition_type: "CN"
+    announced: true
+    release_date: "2024-07-12"
+    os_name: "MagicOS (CN)"
+    hardware:
+      has_band_20: false
+      has_band_7: true
+      has_esim: false
+      sim_slots: "2x NanoSIM"
+      has_nfc: true
+      display_pwm_hz: 4320
+    bundle:
+      has_charger: true
+      charger_wattage_w: 66
+      has_case: true
+      has_cable: true
+      has_box: true
+    memory_variants:
+      - ram_gb: 12
+        storage_gb: 256
+        msrp_local: 8999.0
+        currency: "CNY"
+
+forecast_profile:
+  brand_decay_monthly_rate: 0.058
+  expected_sweet_spot_months: 8
+  historical_plateau_rv: 0.48
