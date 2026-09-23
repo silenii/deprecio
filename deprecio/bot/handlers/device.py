@@ -282,9 +282,20 @@ async def handle_device_search(message: Message) -> None:
         )
         return
 
-    alternatives = [(d.model_id, d.name) for d in matches[1:4]] if len(matches) > 1 else None
+    alternatives = [(d.model_id, d.name) for d in matches[1:6]] if len(matches) > 1 else None
 
     card_text = format_device_card(target)
+    
+    # Проверка на точное совпадение (если пользователь искал poco x6, а нашли poco x6 pro)
+    from deprecio.core.fuzzy_search import normalize_search_text, calculate_match_score
+    score = calculate_match_score(message.text, target.name, target.brand)
+    # Если совпадение неточное (не все слова из запроса входят в имя или нет точного номера)
+    q_norm = normalize_search_text(message.text)
+    t_norm = normalize_search_text(target.name)
+    if score < 0.90 or (q_norm not in t_norm and q_norm != t_norm):
+        warning = "⚠️ *Точное совпадение не найдено, показываем ближайший вариант:*\n\n"
+        card_text = warning + card_text
+
     await status_msg.delete()
     await message.answer(
         card_text,

@@ -58,7 +58,7 @@ def normalize_search_text(text: str) -> str:
 KNOWN_BRANDS = {
     "apple", "iphone", "samsung", "xiaomi", "redmi", "poco", "google", "nothing",
     "oneplus", "realme", "honor", "huawei", "vivo", "oppo", "sony", "nokia",
-    "motorola", "meizu", "asus", "zte", "infinix", "tecno",
+    "motorola", "meizu", "asus", "zte", "infinix", "tecno", "iqoo"
 }
 
 # Иерархия брендов и суббрендов

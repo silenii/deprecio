@@ -130,7 +130,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         self._market_stats_cache[device.model_id] = stats
         return stats
 
-    def _search_global_db(self, query: str, limit: int = 5) -> List[Device]:
+    def _search_global_db(self, query: str, limit: int = 10) -> List[Device]:
         """Полнотекстовый поиск по глобальной базе данных SQLite (10 600+ устройств GSMArena)."""
         if not self.global_db_file or not self.global_db_file.exists():
             return []
@@ -147,7 +147,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         try:
             conn = sqlite3.connect(self.global_db_file)
             cur = conn.cursor()
-            cur.execute(f"SELECT brand, name, raw_specs FROM phones WHERE {clauses} LIMIT 25", params)
+            cur.execute(f"SELECT brand, name, raw_specs FROM phones WHERE {clauses} LIMIT 50", params)
             rows = cur.fetchall()
             conn.close()
 
@@ -169,7 +169,9 @@ class CachedSpecsProvider(BaseSpecsProvider):
             for dev in devices:
                 self._memory_cache[dev.model_id] = dev
             return devices
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.exception(f"Error during SQLite search for '{query}': {e}")
             return []
 
     def search_devices(self, query: str) -> List[Device]:

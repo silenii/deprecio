@@ -1,0 +1,128 @@
+[
+    {
+        "brand_name": "Xiaomi",
+        "model": "Redmi Note 14",
+        "processor_brand": "Mediatek Dimensity 7050",
+        "ram_capacity": "8",
+        "internal_memory": "256",
+        "battery_capacity": "5110",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "Xiaomi",
+        "model": "Redmi Note 13",
+        "processor_brand": "Mediatek Dimensity 6080",
+        "ram_capacity": "8",
+        "internal_memory": "256",
+        "battery_capacity": "5000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "Xiaomi",
+        "model": "Redmi Note 13 (4G)",
+        "processor_brand": "Snapdragon 685",
+        "ram_capacity": "8",
+        "internal_memory": "256",
+        "battery_capacity": "5000",
+        "5G_or_not": "0"
+    },
+    {
+        "brand_name": "POCO",
+        "model": "Poco X6",
+        "processor_brand": "Snapdragon 7s Gen 2",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5100",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "POCO",
+        "model": "Poco F6",
+        "processor_brand": "Snapdragon 8s Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "512",
+        "battery_capacity": "5000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "vivo",
+        "model": "vivo V30",
+        "processor_brand": "Snapdragon 7 Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "vivo",
+        "model": "vivo V40",
+        "processor_brand": "Snapdragon 7 Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5500",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "iQOO",
+        "model": "iQOO 12",
+        "processor_brand": "Snapdragon 8 Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "iQOO",
+        "model": "iQOO 13",
+        "processor_brand": "Snapdragon 8 Elite",
+        "ram_capacity": "16",
+        "internal_memory": "512",
+        "battery_capacity": "6000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "Realme",
+        "model": "Realme GT 6T",
+        "processor_brand": "Snapdragon 7+ Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5500",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "Realme",
+        "model": "Realme GT 6",
+        "processor_brand": "Snapdragon 8s Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5500",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "Realme",
+        "model": "Realme 12 Pro",
+        "processor_brand": "Snapdragon 6 Gen 1",
+        "ram_capacity": "8",
+        "internal_memory": "256",
+        "battery_capacity": "5000",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "OnePlus",
+        "model": "OnePlus 12R",
+        "processor_brand": "Snapdragon 8 Gen 2",
+        "ram_capacity": "16",
+        "internal_memory": "256",
+        "battery_capacity": "5500",
+        "5G_or_not": "1"
+    },
+    {
+        "brand_name": "OnePlus",
+        "model": "OnePlus Nord 4",
+        "processor_brand": "Snapdragon 7+ Gen 3",
+        "ram_capacity": "12",
+        "internal_memory": "256",
+        "battery_capacity": "5500",
+        "5G_or_not": "1"
+    }
+]
