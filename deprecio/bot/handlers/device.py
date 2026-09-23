@@ -63,7 +63,17 @@ def format_device_card(device: Device) -> str:
         today = date.today()
         months_old = max(1, (today.year - first_release_date.year) * 12 + today.month - first_release_date.month)
 
-    current_market_price = base_msrp_rub * 0.58  # Оценочная текущая медиана вторички
+    # Реалистичная кривая уценки вторичного рынка в зависимости от возраста
+    if months_old <= 6:
+        est_rv = max(0.68, 1.0 - (months_old * 0.05))
+    elif months_old <= 18:
+        est_rv = max(0.50, 0.70 - ((months_old - 6) * 0.015))
+    elif months_old <= 36:
+        est_rv = max(0.35, 0.52 - ((months_old - 18) * 0.009))
+    else:
+        est_rv = max(0.20, 0.36 - ((months_old - 36) * 0.003))
+
+    current_market_price = base_msrp_rub * est_rv  # Оценочная текущая медиана вторички
     analysis = analyze_sweet_spot(
         months_since_release=months_old,
         current_price=current_market_price,
