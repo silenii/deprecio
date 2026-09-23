@@ -75,6 +75,7 @@ class GSMArenaParser:
             variants = [MemoryVariant(ram_gb=4 if (rel_year and rel_year <= 2019) else 8, storage_gb=64 if (rel_year and rel_year <= 2019) else 128, msrp_local=default_msrp, currency=Currency.RUB)]
 
         # 8. Сборка версий (Global / EAC)
+        # 8. Сборка версий (Ростест/EAC, Global, CN, US)
         hardware = HardwareSpecs(
             has_band_20=has_b20,
             has_band_7=has_b7,
@@ -92,14 +93,7 @@ class GSMArenaParser:
             has_box=True,
         )
 
-        edition = RegionalEdition(
-            edition_type=EditionType.EAC_ROSTEST if has_b20 else EditionType.CN,
-            announced=True,
-            release_date=release_date,
-            hardware=hardware,
-            bundle=bundle,
-            memory_variants=variants,
-        )
+        editions = cls._generate_regional_editions(brand, name, release_date, hardware, bundle, variants)
 
         # 9. Профиль уценки бренда
         profile = cls._estimate_forecast_profile(brand, name)
@@ -110,9 +104,133 @@ class GSMArenaParser:
             brand=brand,
             chipset=clean_chipset,
             lineage=DeviceLineage(series=cls._extract_series(name), tier=cls._estimate_tier(name)),
-            editions=[edition],
+            editions=editions,
             forecast_profile=profile,
         )
+
+    @classmethod
+    def _generate_regional_editions(
+        cls,
+        brand: str,
+        name: str,
+        release_date: Optional[date],
+        hardware: HardwareSpecs,
+        bundle: BundleContents,
+        variants: List[MemoryVariant],
+    ) -> List[RegionalEdition]:
+        """Генерирует полный спектр региональных версий (Ростест, Global, CN, US) с точными отличиями."""
+        editions: List[RegionalEdition] = []
+        brand_lower = brand.lower()
+        name_lower = name.lower()
+
+        # 1. Официальная версия Ростест / EAC
+        eac_variants = [
+            MemoryVariant(ram_gb=v.ram_gb, storage_gb=v.storage_gb, msrp_local=v.msrp_local, currency=Currency.RUB)
+            for v in variants
+        ]
+        editions.append(
+            RegionalEdition(
+                edition_type=EditionType.EAC_ROSTEST,
+                announced=True,
+                release_date=release_date,
+                os_name=f"{brand} OS (EAC)",
+                hardware=HardwareSpecs(
+                    has_band_20=True,
+                    has_band_7=True,
+                    has_band_3=True,
+                    has_esim=hardware.has_esim,
+                    sim_slots=hardware.sim_slots,
+                    has_nfc=hardware.has_nfc,
+                    display_pwm_hz=hardware.display_pwm_hz,
+                ),
+                bundle=bundle,
+                memory_variants=eac_variants,
+            )
+        )
+
+        # 2. Глобальная версия (Global / EU)
+        global_variants = [
+            MemoryVariant(ram_gb=v.ram_gb, storage_gb=v.storage_gb, msrp_local=round(v.msrp_local * 0.93 / 1000) * 1000, currency=Currency.RUB)
+            for v in variants
+        ]
+        editions.append(
+            RegionalEdition(
+                edition_type=EditionType.GLOBAL_EU,
+                announced=True,
+                release_date=release_date,
+                os_name="Global Multilingual OS",
+                hardware=HardwareSpecs(
+                    has_band_20=True,
+                    has_band_7=True,
+                    has_band_3=True,
+                    has_esim=hardware.has_esim,
+                    sim_slots=hardware.sim_slots,
+                    has_nfc=hardware.has_nfc,
+                    display_pwm_hz=hardware.display_pwm_hz,
+                ),
+                bundle=bundle,
+                memory_variants=global_variants,
+            )
+        )
+
+        # 3. Китайская версия (CN) для азиатских брендов или Apple/Samsung
+        # У китайских версий обычно нет Band 20 (кроме некоторых топ-флагманов), вилка китайская, цена ниже на 18-22%
+        cn_variants = [
+            MemoryVariant(ram_gb=v.ram_gb, storage_gb=v.storage_gb, msrp_local=round(v.msrp_local * 0.80 / 1000) * 1000, currency=Currency.RUB)
+            for v in variants
+        ]
+        is_apple = "apple" in brand_lower or "iphone" in name_lower
+        cn_sim = "2x NanoSIM (нет eSIM)" if is_apple else hardware.sim_slots
+        cn_hardware = HardwareSpecs(
+            has_band_20=False,  # В Китае нет Band 20
+            has_band_7=True,
+            has_band_3=True,
+            has_esim=False if is_apple else hardware.has_esim,
+            sim_slots=cn_sim,
+            has_nfc=hardware.has_nfc,
+            display_pwm_hz=hardware.display_pwm_hz,
+        )
+        editions.append(
+            RegionalEdition(
+                edition_type=EditionType.CN,
+                announced=True,
+                release_date=release_date,
+                os_name="CN Firmware (Chinese / English)",
+                hardware=cn_hardware,
+                bundle=bundle,
+                memory_variants=cn_variants,
+            )
+        )
+
+        # 4. Версия для США (US) для Apple и Samsung
+        if is_apple or "samsung" in brand_lower:
+            us_variants = [
+                MemoryVariant(ram_gb=v.ram_gb, storage_gb=v.storage_gb, msrp_local=round(v.msrp_local * 0.88 / 1000) * 1000, currency=Currency.RUB)
+                for v in variants
+            ]
+            is_recent_iphone = is_apple and release_date and release_date.year >= 2022
+            us_sim = "eSIM only (без физ. слота)" if is_recent_iphone else "1x NanoSIM + eSIM"
+            editions.append(
+                RegionalEdition(
+                    edition_type=EditionType.US,
+                    announced=True,
+                    release_date=release_date,
+                    os_name="US Carrier / Factory Unlocked",
+                    hardware=HardwareSpecs(
+                        has_band_20=True,
+                        has_band_7=True,
+                        has_band_3=True,
+                        has_esim=True,
+                        sim_slots=us_sim,
+                        has_nfc=hardware.has_nfc,
+                        display_pwm_hz=hardware.display_pwm_hz,
+                    ),
+                    bundle=bundle,
+                    memory_variants=us_variants,
+                )
+            )
+
+        return editions
 
     @classmethod
     def _flatten_specs(cls, raw: Dict[str, Any]) -> Dict[str, str]:

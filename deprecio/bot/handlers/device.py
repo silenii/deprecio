@@ -63,17 +63,9 @@ def format_device_card(device: Device) -> str:
         today = date.today()
         months_old = max(1, (today.year - first_release_date.year) * 12 + today.month - first_release_date.month)
 
-    # Реалистичная кривая уценки вторичного рынка в зависимости от возраста
-    if months_old <= 6:
-        est_rv = max(0.68, 1.0 - (months_old * 0.05))
-    elif months_old <= 18:
-        est_rv = max(0.50, 0.70 - ((months_old - 6) * 0.015))
-    elif months_old <= 36:
-        est_rv = max(0.35, 0.52 - ((months_old - 18) * 0.009))
-    else:
-        est_rv = max(0.20, 0.36 - ((months_old - 36) * 0.003))
+    market_stats = catalog.get_market_stats(device)
+    current_market_price = market_stats.median_price_rub
 
-    current_market_price = base_msrp_rub * est_rv  # Оценочная текущая медиана вторички
     analysis = analyze_sweet_spot(
         months_since_release=months_old,
         current_price=current_market_price,
@@ -81,9 +73,11 @@ def format_device_card(device: Device) -> str:
     )
 
     lines.extend([
-        "📊 **Анализ вторичного рынка:**",
+        "📊 **Анализ вторичного рынка (Авито / РФ):**",
         f"• **Возраст модели:** {months_old} мес. с момента релиза",
-        f"• **Ориентир цены (б/у):** ≈ {current_market_price:,.0f} ₽",
+        f"• **Медианная цена (б/у):** ≈ {current_market_price:,.0f} ₽",
+        f"• **Диапазон рынка (IQR):** {market_stats.p25_price_rub:,.0f} — {market_stats.p75_price_rub:,.0f} ₽",
+        f"• **Выборка лотов:** {market_stats.clean_listings_count} шт. (отсеяно выбросов/дефектов: {market_stats.defective_count + market_stats.outliers_count})",
         f"• **Остаточная стоимость (RV%):** {analysis.current_rv_percent:.1f}% ({analysis.total_drop_percent:+.1f}%)",
         "",
         f"💡 **Вердикт Deprecio:**\n{analysis.advice_buyer}",
@@ -154,11 +148,15 @@ async def handle_forecast_callback(callback: CallbackQuery) -> None:
                 base_price = mv.msrp_local
                 break
 
-    report = generate_price_forecast(dev, current_price_rub=base_price, months_horizon=12)
+    market_stats = catalog.get_market_stats(dev)
+    current_market_price = market_stats.median_price_rub
+
+    report = generate_price_forecast(dev, current_price_rub=current_market_price, months_horizon=12)
 
     lines = [
         f"🔮 **Прогноз уценки: {dev.name}**\n",
         f"• Стартовая цена (MSRP): **{base_price:,.0f} ₽**",
+        f"• Текущая медиана вторички (Авито): **{current_market_price:,.0f} ₽**",
         f"• Темп амортизации бренда: **{report.monthly_decay_rate * 100:.1f}% в месяц**",
         f"• Точка входа в Sweet Spot: **через {report.sweet_spot_month} мес.**\n",
         "📉 **Прогнозируемый график снижения цен:**",
@@ -187,9 +185,11 @@ async def handle_editions_callback(callback: CallbackQuery) -> None:
         await callback.answer("Модель не найдена.")
         return
 
+    market_stats = catalog.get_market_stats(dev)
+
     lines = [
         f"⚖️ **Сравнение региональных версий: {dev.name}**\n",
-        "Различия между версиями, влияющие на цену на вторичном рынке РФ:\n",
+        "Различия между версиями и реальные цены вторичного рынка РФ:\n",
     ]
 
     for ed in dev.editions:
@@ -216,12 +216,26 @@ async def handle_editions_callback(callback: CallbackQuery) -> None:
         if ed.memory_variants:
             mv = ed.memory_variants[0]
             lines.append(f"• Стартовая цена: {mv.msrp_local:,.0f} {mv.currency.value}")
+
+        ed_stat = market_stats.editions.get(ed.edition_type.value)
+        if ed_stat:
+            gap_str = ""
+            if ed_stat.gap_vs_eac_percent < 0:
+                gap_str = f" 📉 ({ed_stat.gap_vs_eac_percent}% от Ростеста)"
+            elif ed_stat.gap_vs_eac_percent > 0:
+                gap_str = f" 📈 (+{ed_stat.gap_vs_eac_percent}% от Ростеста)"
+            elif ed.edition_type == EditionType.EAC_ROSTEST:
+                gap_str = " (эталон цен)"
+
+            lines.append(f"• **Цена вторички (Авито):** ≈ {ed_stat.median_price_rub:,.0f} ₽{gap_str}")
+            lines.append(f"  └ Диапазон: {ed_stat.min_price_rub:,.0f} – {ed_stat.max_price_rub:,.0f} ₽ (лотов: {ed_stat.count})")
+
         lines.append("")
 
     lines.append(
         "💡 **Совет по ликвидности:**\n"
-        "Китайские версии (CN) на вторичке в РФ продаются на 15–25% дешевле Ростеста "
-        "из-за китайской вилки и отсутствия Band 20. Учитывайте это при покупке и перепродаже!"
+        "Китайские версии (CN) на вторичке в РФ стабильно продаются на 15–25% дешевле Ростеста "
+        "из-за китайской вилки и отсутствия Band 20. Учитывайте этот дисконт при покупке и перепродаже!"
     )
 
     await callback.message.answer("\n".join(lines), reply_markup=get_back_keyboard(), parse_mode="Markdown")

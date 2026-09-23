@@ -5,7 +5,7 @@ from pathlib import Path
 import sqlite3
 from typing import Dict, List, Optional
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
-from deprecio.models.device import Device
+from deprecio.models.device import Device, EditionType
 from .base import BaseSpecsProvider
 from .gsmarena_client import GSMArenaClient
 from .gsmarena_parser import GSMArenaParser
@@ -44,11 +44,12 @@ class CachedSpecsProvider(BaseSpecsProvider):
             self.global_db_file = default_db if default_db.exists() else None
 
         self._memory_cache: Dict[str, Device] = {}
+        self._market_stats_cache: Dict[str, object] = {}
         self._load_catalog()
         self._load_disk_cache()
 
     def _load_catalog(self) -> None:
-        """Загружает встроенную базу устройств из data/catalog.json."""
+        """Загружает встроенную базу устройств из data/catalog.json и дополняет региональные версии."""
         if not self.catalog_file or not self.catalog_file.exists():
             return
         try:
@@ -56,6 +57,17 @@ class CachedSpecsProvider(BaseSpecsProvider):
                 items = json.load(f)
                 for item in items:
                     dev = Device(**item)
+                    if len(dev.editions) <= 1:
+                        first_ed = dev.editions[0] if dev.editions else None
+                        if first_ed:
+                            dev.editions = GSMArenaParser._generate_regional_editions(
+                                brand=dev.brand,
+                                name=dev.name,
+                                release_date=first_ed.release_date,
+                                hardware=first_ed.hardware,
+                                bundle=first_ed.bundle,
+                                variants=first_ed.memory_variants,
+                            )
                     self._memory_cache[dev.model_id] = dev
         except Exception:
             pass
@@ -105,6 +117,18 @@ class CachedSpecsProvider(BaseSpecsProvider):
             except Exception:
                 pass
         return None
+
+    def get_market_stats(self, device: Device, refresh: bool = False):
+        """Получает агрегированную статистику вторичного рынка Авито с очисткой дефектов и фильтрацией IQR."""
+        from deprecio.harvester import MarketAggregator, SnapshotGenerator, MarketStats
+
+        if not refresh and device.model_id in self._market_stats_cache:
+            return self._market_stats_cache[device.model_id]
+
+        listings = SnapshotGenerator.get_or_create_snapshot(device)
+        stats = MarketAggregator.aggregate_market_data(device, listings)
+        self._market_stats_cache[device.model_id] = stats
+        return stats
 
     def _search_global_db(self, query: str, limit: int = 5) -> List[Device]:
         """Полнотекстовый поиск по глобальной базе данных SQLite (10 600+ устройств GSMArena)."""

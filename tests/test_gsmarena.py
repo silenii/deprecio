@@ -72,9 +72,10 @@ class TestGSMArenaIntegration(unittest.TestCase):
         mock_cn = dict(self.mock_raw_s24)
         mock_cn["specifications_table"]["network"]["4g_bands"] = "1, 3, 5, 7, 8, 38, 39, 40, 41"
         device = GSMArenaParser.parse_device(mock_cn)
-        edition = device.editions[0]
-        self.assertFalse(edition.hardware.has_band_20)
-        self.assertEqual(edition.edition_type, EditionType.CN)
+        cn_edition = next((e for e in device.editions if e.edition_type == EditionType.CN), None)
+        self.assertIsNotNone(cn_edition)
+        self.assertFalse(cn_edition.hardware.has_band_20)
+        self.assertEqual(cn_edition.edition_type, EditionType.CN)
 
     def test_cached_provider_disk_storage(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -90,7 +91,7 @@ class TestGSMArenaIntegration(unittest.TestCase):
 
             self.assertIsNotNone(cached_dev)
             self.assertEqual(cached_dev.name, "Samsung Galaxy S24 Ultra")
-            self.assertEqual(len(cached_dev.editions), 1)
+            self.assertGreaterEqual(len(cached_dev.editions), 3)
 
 
 if __name__ == "__main__":

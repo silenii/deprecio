@@ -54,6 +54,39 @@ def normalize_search_text(text: str) -> str:
     return s
 
 
+# Известные бренды для предотвращения ложных межбрендовых сопоставлений
+KNOWN_BRANDS = {
+    "apple", "iphone", "samsung", "xiaomi", "redmi", "poco", "google", "nothing",
+    "oneplus", "realme", "honor", "huawei", "vivo", "oppo", "sony", "nokia",
+    "motorola", "meizu", "asus", "zte", "infinix", "tecno",
+}
+
+# Иерархия брендов и суббрендов
+PARENT_BRANDS = {
+    "redmi": "xiaomi",
+    "poco": "xiaomi",
+    "iphone": "apple",
+}
+
+
+def check_brand_compatibility(clean_q: str, clean_t: str, clean_b: str) -> bool:
+    """Проверяет, не запрошен ли явно другой бренд (например, запрос oneplus для apple)."""
+    q_words = set(clean_q.split())
+    q_brands = q_words.intersection(KNOWN_BRANDS)
+    if not q_brands:
+        return True
+
+    t_words = set(clean_t.split()).union({clean_b} if clean_b else set())
+    for qb in q_brands:
+        allowed = {qb, PARENT_BRANDS.get(qb, qb)}
+        for child, parent in PARENT_BRANDS.items():
+            if parent == qb:
+                allowed.add(child)
+        if not t_words.intersection(allowed):
+            return False
+    return True
+
+
 def extract_model_numbers(text: str) -> set:
     """Извлекает числовые идентификаторы моделей (например, 24, 7, 2a, 13, 15)."""
     return set(re.findall(r"\d+[a-z]?", text))
@@ -72,6 +105,10 @@ def calculate_match_score(query: str, target_name: str, brand: str) -> float:
     clean_b = normalize_search_text(brand)
 
     if not clean_q or not clean_t:
+        return 0.0
+
+    # Проверка совместимости брендов (OnePlus 11 не должен сопоставляться с Apple iPhone 11)
+    if not check_brand_compatibility(clean_q, clean_t, clean_b):
         return 0.0
 
     # Проверка строгой согласованности числовых номеров поколений.
