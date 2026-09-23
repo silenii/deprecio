@@ -1,9 +1,10 @@
-"""Unit tests for Smart Fuzzy Search and Transliteration Engine."""
+"""Unit tests for Smart Fuzzy Search, Strict Generation Matching, and Global Database."""
 
 import pytest
 from deprecio.core.fuzzy_search import (
     BRAND_TRANSLIT,
     calculate_match_score,
+    extract_model_numbers,
     fuzzy_search_devices,
     normalize_search_text,
 )
@@ -24,6 +25,27 @@ def test_normalize_search_text():
     assert "nothing phone 2a" == normalize_search_text("Nothing Phone (2a)")
     assert "samsung s24 ultra" == normalize_search_text("Самсунг s24 ультра")
     assert "pixel 8" == normalize_search_text("Пиксель 8")
+    assert "s24" == normalize_search_text("с24")
+    assert "a55" == normalize_search_text("а55")
+    assert "2a" == normalize_search_text("2а")
+
+
+def test_strict_number_discrimination():
+    # Запрос с числом '7' (Redmi Note 7) не должен сопоставляться с моделью '13' (Redmi Note 13 Pro+)
+    score_redmi = calculate_match_score("redmi note 7", "Xiaomi Redmi Note 13 Pro+", "Xiaomi")
+    assert score_redmi == 0.0
+
+    # iPhone 11 не должен сопоставляться с iPhone 15
+    score_iphone = calculate_match_score("iphone 11", "Apple iPhone 15 Pro", "Apple")
+    assert score_iphone == 0.0
+
+    # s24 не должен сопоставляться с s23
+    score_samsung = calculate_match_score("s24", "Samsung Galaxy S23", "Samsung")
+    assert score_samsung == 0.0
+
+    # Корректное совпадение того же поколения
+    assert calculate_match_score("redmi note 7", "Xiaomi Redmi Note 7", "Xiaomi") >= 0.90
+    assert calculate_match_score("s24", "Samsung Galaxy S24", "Samsung") >= 0.90
 
 
 def test_calculate_match_score_exact_and_substring():
@@ -81,3 +103,25 @@ def test_cached_provider_fuzzy_integration():
     devs_ru = provider.search_devices("айфон 15")
     assert len(devs_ru) > 0
     assert "iPhone 15" in devs_ru[0].name
+
+
+def test_global_database_search():
+    provider = CachedSpecsProvider()
+
+    # Поиск Redmi Note 7 находит именно Redmi Note 7, а не 13 Pro+
+    redmi7_list = provider.search_devices("redmi note 7")
+    assert len(redmi7_list) > 0
+    top_redmi = redmi7_list[0]
+    assert "Redmi Note 7" in top_redmi.name
+    assert "13" not in top_redmi.name
+    assert top_redmi.chipset is not None
+
+    # Поиск старого iPhone 7
+    iphone7_list = provider.search_devices("iphone 7")
+    assert len(iphone7_list) > 0
+    assert "iPhone 7" in iphone7_list[0].name
+
+    # Поиск Samsung Galaxy S10
+    s10_list = provider.search_devices("galaxy s10")
+    assert len(s10_list) > 0
+    assert "S10" in s10_list[0].name

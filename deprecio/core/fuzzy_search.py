@@ -54,6 +54,11 @@ def normalize_search_text(text: str) -> str:
     return s
 
 
+def extract_model_numbers(text: str) -> set:
+    """Извлекает числовые идентификаторы моделей (например, 24, 7, 2a, 13, 15)."""
+    return set(re.findall(r"\d+[a-z]?", text))
+
+
 def calculate_match_score(query: str, target_name: str, brand: str) -> float:
     """
     Вычисляет релевантность совпадения (от 0.0 до 1.0):
@@ -68,6 +73,20 @@ def calculate_match_score(query: str, target_name: str, brand: str) -> float:
 
     if not clean_q or not clean_t:
         return 0.0
+
+    # Проверка строгой согласованности числовых номеров поколений.
+    # Если в запросе есть число (например 7 в 'Redmi Note 7'), а у кандидата
+    # другое число (13 в 'Redmi Note 13'), они НЕ должны совпадать!
+    q_nums = extract_model_numbers(clean_q)
+    if q_nums:
+        t_nums = extract_model_numbers(clean_t)
+        for qn in q_nums:
+            has_match = any(
+                qn == tn or (len(qn) > 1 and tn.endswith(qn)) or (len(tn) > 1 and qn.endswith(tn))
+                for tn in t_nums
+            )
+            if not has_match:
+                return 0.0
 
     # 1. Полное совпадение
     if clean_q == clean_t:
