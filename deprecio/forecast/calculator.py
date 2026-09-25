@@ -3,7 +3,9 @@
 from dataclasses import dataclass
 from datetime import date
 from typing import List, Optional
+from dateutil.relativedelta import relativedelta
 from deprecio.models.device import Device, ForecastProfile
+
 
 
 @dataclass
@@ -45,55 +47,42 @@ def generate_price_forecast(
 
     # Оценка плато (минимальной равновесной цены вторички для данного класса)
     plateau_price = current_price_rub * profile.historical_plateau_rv
-    decay = profile.brand_decay_monthly_rate
+    decay_rate = profile.brand_decay_monthly_rate
 
     points: List[ForecastPoint] = []
-    milestones = [1, 2, 3, 6, 9, 12]
 
-    for m in milestones:
-        if m > months_horizon:
-            continue
-
+    # Расчет для каждого месяца от 1 до months_horizon
+    for t in range(1, months_horizon + 1):
         # Экспоненциальное приближение к уровню плато
-        decay_factor = (1.0 - decay) ** m
-        pred_price = plateau_price + (current_price_rub - plateau_price) * decay_factor
-        pred_price = round(pred_price / 100) * 100  # Округление до сотен рублей
-        pred_rv = round((pred_price / current_price_rub) * 100, 1)
-
-        # Сезонные триггеры падения цен
-        trigger = None
-        target_month = (today.month + m - 1) % 12 + 1
-        if target_month == 11:
-            trigger = "🏷️ Распродажа 11.11 (День холостяка)"
-        elif target_month == 12:
-            trigger = "🎄 Новогодние скидки"
-        elif m == profile.expected_sweet_spot_months:
-            trigger = "🟢 Вход в ценовое плато (Sweet Spot)"
-
-        # Расчет будущей даты
-        future_year = today.year + (today.month + m - 1) // 12
+        decay_factor = (1.0 - decay_rate) ** t
+        predicted = plateau_price + (current_price_rub - plateau_price) * decay_factor
+        
+        # Расчет целевой даты
+        target_date = (today + relativedelta(months=t)).isoformat()
+        
+        # Определение trigger_event
+        trigger_event = None
+        if t == profile.expected_sweet_spot_months:
+            trigger_event = "Sweet Spot"
+        
+        # Добавление точки прогноза
         points.append(
             ForecastPoint(
-                months_ahead=m,
-                target_date=f"{target_month:02d}.{future_year}",
-                predicted_price_rub=pred_price,
-                predicted_rv_percent=pred_rv,
-                trigger_event=trigger,
+                months_ahead=t,
+                target_date=target_date,
+                predicted_price_rub=round(predicted, 0),
+                predicted_rv_percent=round((predicted / current_price_rub) * 100, 1),
+                trigger_event=trigger_event,
             )
         )
 
     # Формирование итогового вердикта
-    if profile.brand_decay_monthly_rate <= 0.03:
-        summary = (
-            f"🛡️ Высокая ликвидность ({device.brand}): медленный темп уценки "
-            f"≈ {profile.brand_decay_monthly_rate * 100:.1f}% в месяц. Отлично держит цену."
-        )
+    if decay_rate < 0.03:
+        summary_verdict = "Медленная амортизация: устройство хорошо держит цену"
+    elif decay_rate < 0.06:
+        summary_verdict = "Стандартная амортизация: типичная для флагманов"
     else:
-        summary = (
-            f"⚡ Быстрая амортизация ({device.brand}): средний темп падения "
-            f"≈ {profile.brand_decay_monthly_rate * 100:.1f}% в месяц. Оптимально покупать через "
-            f"{profile.expected_sweet_spot_months} мес. после релиза."
-        )
+        summary_verdict = "Быстрая амортизация: характерна для китайских суббрендов"
 
     return DeviceForecastReport(
         device_id=device.model_id,
@@ -102,5 +91,5 @@ def generate_price_forecast(
         monthly_decay_rate=profile.brand_decay_monthly_rate,
         sweet_spot_month=profile.expected_sweet_spot_months,
         points=points,
-        summary_verdict=summary,
+        summary_verdict=summary_verdict,
     )
