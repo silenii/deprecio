@@ -18,25 +18,19 @@ class EditionMarketStats(BaseModel):
 
 
 class MarketStats(BaseModel):
-    """Сводная аналитическая статистика по вторичному рынку смартфона."""
-    model_id: str = Field(..., description="ID модели устройства")
-    model_name: str = Field(..., description="Название модели устройства")
-    total_raw_listings: int = Field(..., description="Всего собрано объявлений в снапшоте")
-    clean_listings_count: int = Field(..., description="Количество валидных объявлений после очистки")
-    defective_count: int = Field(..., description="Отсеяно дефектных / заблокированных лотов")
-    outliers_count: int = Field(..., description="Отсеяно статистических ценовых выбросов IQR")
-    
-    # Ключевые ценовые метрики
-    min_price_rub: float = Field(..., description="Минимальная цена валидного лота")
-    p25_price_rub: float = Field(..., description="25-й перцентиль цены (выгодный порог)")
-    median_price_rub: float = Field(..., description="Медианная рыночная цена")
-    p75_price_rub: float = Field(..., description="75-й перцентиль цены (верхняя граница нормы)")
-    max_price_rub: float = Field(..., description="Максимальная адекватная цена")
-    
-    # Распределение по региональным версиям
-    editions: Dict[str, EditionMarketStats] = Field(default_factory=dict, description="Метрики по версиям (CN, EAC, Global)")
-    
-    # Распределение по состояниям
-    condition_medians: Dict[str, float] = Field(default_factory=dict, description="Медианные цены по состояниям")
-    
-    updated_at: date = Field(default_factory=date.today, description="Дата актуализации снапшота")
+    """Сводная рыночная статистика по всем версиям конкретной модели."""
+    model_id: str = Field(..., description="Идентификатор модели из каталога")
+    model_name: str = Field(..., description="Полное название модели")
+    snapshot_date: date = Field(..., description="Дата снятия среза данных")
+    total_listings: int = Field(0, description="Общее число объявлений до очистки")
+    clean_listings: int = Field(0, description="Число объявлений после фильтрации")
+    by_edition: Dict[EditionType, EditionMarketStats] = Field(
+        default_factory=dict,
+        description="Статистика по каждой региональной версии"
+    )
+
+    @property
+    def eac_median_price(self) -> Optional[float]:
+        """Медианная цена Ростест-версии или None если нет данных."""
+        stats = self.by_edition.get(EditionType.EAC_ROSTEST)
+        return stats.median_price_rub if stats else None
