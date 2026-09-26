@@ -57,9 +57,13 @@ class GSMArenaParser:
         elif "esim" in sim_str:
             sim_slots = "1x NanoSIM + eSIM"
 
+        tier = cls._estimate_tier(name)
+
         # 5. NFC
         nfc_str = specs.get("nfc", "").lower()
-        has_nfc = "yes" in nfc_str or "да" in nfc_str or bool(nfc_str and "no" not in nfc_str)
+        has_nfc = bool(nfc_str) and ("yes" in nfc_str or "да" in nfc_str) and "no" not in nfc_str
+        if not nfc_str and tier in ("Flagship", "Ultra-Flagship"):
+            has_nfc = True
 
         # 6. Зарядка и мощность
         charging_str = specs.get("charging", "") or specs.get("battery_charging", "")
@@ -71,7 +75,6 @@ class GSMArenaParser:
         # 7. Конфигурации памяти
         memory_str = specs.get("internal", "") or specs.get("memory_internal", "")
         rel_year = release_date.year if release_date else None
-        tier = cls._estimate_tier(name)
         variants = cls._parse_memory_variants(memory_str, brand, tier, release_year=rel_year)
         if not variants:
             default_msrp = 19990.0 if (rel_year and rel_year <= 2019) else 49990.0
