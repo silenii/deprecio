@@ -32,6 +32,8 @@ class GSMArenaParser:
 
         # Извлечение спецификаций из табличного или вложенного формата
         specs = cls._flatten_specs(raw)
+        raw_os = specs.get("os", "") or specs.get("platform_os", "")
+        os_base = raw_os.split(",")[0].strip() if raw_os else ""
 
         # 1. Процессор / Чипсет
         chipset = specs.get("chipset") or specs.get("platform_chipset")
@@ -94,7 +96,9 @@ class GSMArenaParser:
             has_box=True,
         )
 
-        editions = cls._generate_regional_editions(brand, name, release_date, hardware, bundle, variants)
+        editions = cls._generate_regional_editions(
+            brand, name, release_date, hardware, bundle, variants, os_base=os_base
+        )
 
         # 9. Профиль уценки бренда
         profile = cls._estimate_forecast_profile(brand, name)
@@ -118,6 +122,7 @@ class GSMArenaParser:
         hardware: HardwareSpecs,
         bundle: BundleContents,
         variants: List[MemoryVariant],
+        os_base: str = "",
     ) -> List[RegionalEdition]:
         """Генерирует полный спектр региональных версий (Ростест, Global, CN, US) с точными отличиями."""
         editions: List[RegionalEdition] = []
@@ -134,7 +139,7 @@ class GSMArenaParser:
                 edition_type=EditionType.EAC_ROSTEST,
                 announced=True,
                 release_date=release_date,
-                os_name=f"{brand} OS (EAC)",
+                os_name=f"{os_base} (EAC)" if os_base else f"{brand} OS",
                 hardware=HardwareSpecs(
                     has_band_20=True,
                     has_band_7=True,
@@ -159,7 +164,7 @@ class GSMArenaParser:
                 edition_type=EditionType.GLOBAL_EU,
                 announced=True,
                 release_date=release_date,
-                os_name="Global Multilingual OS",
+                os_name=f"{os_base} Global" if os_base else "Global OS",
                 hardware=HardwareSpecs(
                     has_band_20=True,
                     has_band_7=True,
@@ -196,7 +201,7 @@ class GSMArenaParser:
                 edition_type=EditionType.CN,
                 announced=True,
                 release_date=release_date,
-                os_name="CN Firmware (Chinese / English)",
+                os_name=f"{os_base} CN" if os_base else "CN Firmware",
                 hardware=cn_hardware,
                 bundle=bundle,
                 memory_variants=cn_variants,
@@ -216,7 +221,7 @@ class GSMArenaParser:
                     edition_type=EditionType.US,
                     announced=True,
                     release_date=release_date,
-                    os_name="US Carrier / Factory Unlocked",
+                    os_name=f"{os_base} US" if os_base else "US Version",
                     hardware=HardwareSpecs(
                         has_band_20=True,
                         has_band_7=True,
