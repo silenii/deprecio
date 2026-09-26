@@ -1,8 +1,10 @@
 """Hybrid Cached Specifications Provider combining GSMArena and Local Cache."""
 
 import json
+import asyncio
 from pathlib import Path
 import sqlite3
+import time
 from typing import Dict, List, Optional
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
 from deprecio.models.device import Device, EditionType
@@ -118,17 +120,39 @@ class CachedSpecsProvider(BaseSpecsProvider):
                 pass
         return None
 
-    def get_market_stats(self, device: Device, refresh: bool = False):
-        """Получает агрегированную статистику вторичного рынка Авито с очисткой дефектов и фильтрацией IQR."""
-        from deprecio.harvester import MarketAggregator, SnapshotGenerator, MarketStats
+    async def get_market_stats(self, device: Device, refresh: bool = False):
+        """Получает статистику рынка из Avito с многоуровневым кешированием."""
+        from deprecio.harvester import MarketAggregator, SnapshotGenerator
 
         if not refresh and device.model_id in self._market_stats_cache:
             return self._market_stats_cache[device.model_id]
 
-        listings = SnapshotGenerator.get_or_create_snapshot(device)
+        snapshot_path = Path("data/snapshots") / f"{device.model_id}.json"
+        snapshot_is_fresh = (
+            snapshot_path.exists()
+            and time.time() - snapshot_path.stat().st_mtime < 24 * 60 * 60
+        )
+        cached = SnapshotGenerator.load_snapshot(device.model_id) if snapshot_is_fresh else None
+        if cached and not refresh:
+            stats = MarketAggregator.aggregate_market_data(device, cached)
+            self._market_stats_cache[device.model_id] = stats
+            return stats
+
+        from deprecio.harvester.avito_scraper import AvitoScraper
+
+        scraper = AvitoScraper()
+        listings = await scraper.fetch_and_convert(device.name, device.model_id)
+        if not listings:
+            listings = SnapshotGenerator.generate_listings(device, count=35)
+
+        SnapshotGenerator.save_snapshot(device, listings)
         stats = MarketAggregator.aggregate_market_data(device, listings)
         self._market_stats_cache[device.model_id] = stats
         return stats
+
+    def get_market_stats_sync(self, device: Device, refresh: bool = False):
+        """Синхронная обертка для использования вне async-контекста."""
+        return asyncio.run(self.get_market_stats(device, refresh=refresh))
 
     def _search_global_db(self, query: str, limit: int = 10) -> List[Device]:
         """Полнотекстовый поиск по глобальной базе данных SQLite (10 600+ устройств GSMArena)."""
