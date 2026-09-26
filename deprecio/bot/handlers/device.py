@@ -11,10 +11,16 @@ from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
 
 router = Router(name="device_router")
-catalog = CachedSpecsProvider()
+catalog: Optional[CachedSpecsProvider] = None
 
 
-def format_device_card(device: Device) -> str:
+@router.startup()
+async def on_startup() -> None:
+    global catalog
+    catalog = CachedSpecsProvider()
+
+
+async def format_device_card(device: Device) -> str:
     """Форматирование карточки смартфона с аналитикой уценки."""
     lines = [
         f"📱 **{device.name}**",
@@ -63,7 +69,7 @@ def format_device_card(device: Device) -> str:
         today = date.today()
         months_old = max(1, (today.year - first_release_date.year) * 12 + today.month - first_release_date.month)
 
-    market_stats = catalog.get_market_stats(device)
+    market_stats = await catalog.get_market_stats(device)
     current_market_price = market_stats.median_price_rub
 
     analysis = analyze_sweet_spot(
@@ -148,7 +154,7 @@ async def handle_forecast_callback(callback: CallbackQuery) -> None:
                 base_price = mv.msrp_local
                 break
 
-    market_stats = catalog.get_market_stats(dev)
+    market_stats = await catalog.get_market_stats(dev)
     current_market_price = market_stats.median_price_rub
 
     report = generate_price_forecast(dev, current_price_rub=current_market_price, months_horizon=12)
@@ -185,7 +191,7 @@ async def handle_editions_callback(callback: CallbackQuery) -> None:
         await callback.answer("Модель не найдена.")
         return
 
-    market_stats = catalog.get_market_stats(dev)
+    market_stats = await catalog.get_market_stats(dev)
 
     lines = [
         f"⚖️ **Сравнение региональных версий: {dev.name}**\n",
@@ -250,7 +256,7 @@ async def handle_show_device_callback(callback: CallbackQuery) -> None:
         await callback.answer("Модель не найдена.")
         return
 
-    card_text = format_device_card(dev)
+    card_text = await format_device_card(dev)
     await callback.message.edit_text(
         card_text,
         reply_markup=get_device_card_keyboard(dev.model_id),
@@ -284,7 +290,7 @@ async def handle_device_search(message: Message) -> None:
 
     alternatives = [(d.model_id, d.name) for d in matches[1:6]] if len(matches) > 1 else None
 
-    card_text = format_device_card(target)
+    card_text = await format_device_card(target)
     
     # Проверка на точное совпадение (если пользователь искал poco x6, а нашли poco x6 pro)
     from deprecio.core.fuzzy_search import normalize_search_text, calculate_match_score
