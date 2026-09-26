@@ -92,6 +92,11 @@ def extract_model_numbers(text: str) -> set:
     return set(re.findall(r"\d+[a-z]?", text))
 
 
+def _extract_model_codes(text: str) -> set[str]:
+    """Извлекает буквенно-цифровые коды модели (X6, S24, Note13, A55 и т.п.)."""
+    return set(re.findall(r"\b[A-Za-z]*\d+[A-Za-z]*\b", text.lower()))
+
+
 def calculate_match_score(query: str, target_name: str, brand: str) -> float:
     """
     Вычисляет релевантность совпадения (от 0.0 до 1.0):
@@ -125,38 +130,47 @@ def calculate_match_score(query: str, target_name: str, brand: str) -> float:
             if not has_match:
                 return 0.0
 
-    # 1. Полное совпадение
+    # Вычисляем базовый score до применения штрафа за несовпадение кода модели.
     if clean_q == clean_t:
-        return 1.0
-
+        score = 1.0
     # 2. Подстрока (например "nothing 2a" входит в "nothing phone 2a")
-    if clean_q in clean_t:
-        return 0.95
+    elif clean_q in clean_t:
+        score = 0.95
+    else:
+        # 3. Совпадение по токенам (все введенные слова есть в названии)
+        q_tokens = set(clean_q.split())
+        t_tokens = set(clean_t.split())
+        if clean_b:
+            t_tokens.add(clean_b)
 
-    # 3. Совпадение по токенам (все введенные слова есть в названии)
-    q_tokens = set(clean_q.split())
-    t_tokens = set(clean_t.split())
-    if clean_b:
-        t_tokens.add(clean_b)
+        if q_tokens.issubset(t_tokens):
+            score = 0.90
+        else:
+            # Если токены запроса начинаются с введенных префиксов (напр. 's24' или '2a')
+            all_prefixes_match = True
+            for q_tok in q_tokens:
+                found_tok = any(t_tok.startswith(q_tok) or q_tok.startswith(t_tok) for t_tok in t_tokens)
+                if not found_tok:
+                    all_prefixes_match = False
+                    break
 
-    # Если все токены запроса найдены в названии
-    if q_tokens.issubset(t_tokens):
-        return 0.90
+            if all_prefixes_match and len(q_tokens) > 0:
+                score = 0.85
+            else:
+                # 4. Нечеткое сходство через SequenceMatcher
+                ratio = difflib.SequenceMatcher(None, clean_q, clean_t).ratio()
+                score = round(ratio, 3)
 
-    # Если токены запроса начинаются с введенных префиксов (напр. 's24' или '2a')
-    all_prefixes_match = True
-    for q_tok in q_tokens:
-        found_tok = any(t_tok.startswith(q_tok) or q_tok.startswith(t_tok) for t_tok in t_tokens)
-        if not found_tok:
-            all_prefixes_match = False
-            break
+    query_codes = _extract_model_codes(query)
+    target_codes = _extract_model_codes(f"{target_name} {brand}")
+    if query_codes and target_codes:
+        overlap = query_codes & target_codes
+        if not overlap:
+            score *= 0.5
+        elif len(overlap) < len(query_codes):
+            score *= 0.75
 
-    if all_prefixes_match and len(q_tokens) > 0:
-        return 0.85
-
-    # 4. Нечеткое сходство через SequenceMatcher
-    ratio = difflib.SequenceMatcher(None, clean_q, clean_t).ratio()
-    return round(ratio, 3)
+    return score
 
 
 def fuzzy_search_devices(
