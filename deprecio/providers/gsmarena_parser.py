@@ -276,9 +276,21 @@ class GSMArenaParser:
 
     @staticmethod
     def _clean_chipset_name(raw_soc: str) -> str:
-        # Убирает технические индексы SM8650, нанометры и лишний мусор
-        clean = re.sub(r"\bSM\d+-[A-Z0-9]+\b", "", raw_soc)
-        clean = re.sub(r"\(\d+\s*nm\)", "", clean)
+        """Нормализация названия чипсета: убирает технические индексы и маркетинговые суффиксы."""
+        if not raw_soc:
+            return raw_soc
+        # Убрать SM-коды Qualcomm (SM8650-AB и т.п.)
+        clean = re.sub(r"\bSM\d+[-\w]*\b", "", raw_soc)
+        # Убрать нанометры: (4nm), (3 nm)
+        clean = re.sub(r"\(\d+\s*nm\)", "", clean, flags=re.IGNORECASE)
+        # Убрать маркетинговые суффиксы производителей
+        clean = re.sub(
+            r"\s+for\s+(Galaxy|Xiaomi|OPPO|vivo|Motorola|OnePlus|Nokia|Sony)\b.*",
+            "",
+            clean,
+            flags=re.IGNORECASE,
+        )
+        # Убрать дублирующиеся пробелы
         clean = re.sub(r"\s+", " ", clean).strip()
         return clean or raw_soc
 
