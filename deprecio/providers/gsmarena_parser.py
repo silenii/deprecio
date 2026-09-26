@@ -375,30 +375,23 @@ class GSMArenaParser:
 
     @staticmethod
     def _estimate_tier(name: str) -> str:
-        name_lower = name.lower()
-        words = set(name_lower.split())
-        
-        if any(w in name_lower for w in ["ultra", "pro max", "pro+", "pro plus", "fold", "magic v"]):
+        n = name.lower()
+        # Ultra-Flagship — проверяем ПЕРВЫМИ, до всех остальных веток
+        if any(kw in n for kw in ["ultra", "pro max", "pro+", "pro plus", "fold", "flip", "magic v", "find x"]):
             return "Ultra-Flagship"
-            
-        # Flagships (but rule out sub-flagships that just use 'Pro')
-        if any(w in name_lower for w in ["pro", "plus", "+"]):
-            # Exemptions: budget/midrange phones with 'Pro' (e.g. Poco X6 Pro, Redmi Note 13 Pro)
-            if any(w in name_lower for w in ["poco", "redmi"]) or any(w in words for w in ["c", "m", "y"]):
+        # Flagship
+        if any(kw in n for kw in ["pro", " plus", " x pro", "gt pro"]):
+            # Бюджетные/мидрейндж бренды с "Pro" — это Sub-flagship
+            if any(b in n for b in ["redmi", "poco", "note"]):
                 return "Sub-flagship"
             return "Flagship"
-            
-        if "gt" in name_lower or "x" in words:
-            if "poco x" in name_lower:
-                return "Mid-range"
-            return "Flagship"
-
-        if any(w in name_lower for w in ["lite", "fe", "a5", "neo"]):
+        # Sub-flagship
+        if any(kw in n for kw in ["lite", " fe", " se", "neo", "edge", "gt", " x "]):
             return "Sub-flagship"
-            
-        if any(w in name_lower for w in ["a0", "a1", "a2", "a3", "spark", "smart", "pop"]) or any(w in words for w in ["c", "y"]):
+        # Budget
+        if any(kw in n for kw in ["spark", "smart", "pop", "play", "enjoy", "y1", "y3", "a0", "a1", "a2", "a3"]):
             return "Budget"
-            
+        # По умолчанию — Mid-range
         return "Mid-range"
 
     @staticmethod
