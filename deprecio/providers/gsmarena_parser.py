@@ -190,11 +190,20 @@ class GSMArenaParser:
         ]
         is_apple = "apple" in brand_lower or "iphone" in name_lower
         cn_sim = "2x NanoSIM (нет eSIM)" if is_apple else hardware.sim_slots
+        release_year = release_date.year if release_date else 2024
+        if "apple" in brand_lower:
+            cn_has_esim = release_year >= 2022
+        elif "samsung" in brand_lower:
+            cn_has_esim = False
+        elif any(b in brand_lower for b in ["redmi", "poco", "infinix", "tecno"]):
+            cn_has_esim = False
+        else:
+            cn_has_esim = hardware.has_esim and release_year >= 2023
         cn_hardware = HardwareSpecs(
             has_band_20=False,  # В Китае нет Band 20
             has_band_7=True,
             has_band_3=True,
-            has_esim=False if is_apple else hardware.has_esim,
+            has_esim=cn_has_esim,
             sim_slots=cn_sim,
             has_nfc=hardware.has_nfc,
             display_pwm_hz=hardware.display_pwm_hz,
