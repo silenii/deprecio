@@ -1,10 +1,9 @@
 """Data models for Secondary Market Statistics and Aggregated Pricing."""
 
 from datetime import date
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from pydantic import BaseModel, Field
 from deprecio.models.device import EditionType
-from deprecio.models.listing import ItemCondition
 
 
 class EditionMarketStats(BaseModel):
@@ -18,19 +17,29 @@ class EditionMarketStats(BaseModel):
 
 
 class MarketStats(BaseModel):
-    """Сводная рыночная статистика по всем версиям конкретной модели."""
-    model_id: str = Field(..., description="Идентификатор модели из каталога")
-    model_name: str = Field(..., description="Полное название модели")
-    snapshot_date: date = Field(..., description="Дата снятия среза данных")
-    total_listings: int = Field(0, description="Общее число объявлений до очистки")
-    clean_listings: int = Field(0, description="Число объявлений после фильтрации")
-    by_edition: Dict[EditionType, EditionMarketStats] = Field(
-        default_factory=dict,
-        description="Статистика по каждой региональной версии"
-    )
+    """Сводная рыночная статистика по всем версиям модели."""
+    model_id: str
+    model_name: str
+    snapshot_date: date = Field(default_factory=date.today)
+
+    # Счётчики выборки
+    total_raw_listings: int = Field(0, description="Всего объявлений до очистки")
+    clean_listings_count: int = Field(0, description="После фильтрации IQR + дефектов")
+    defective_count: int = Field(0, description="Отсеяно дефектных")
+    outliers_count: int = Field(0, description="Отсеяно ценовых выбросов")
+
+    # Ценовой профиль (рубли)
+    min_price_rub: float = 0.0
+    p25_price_rub: float = 0.0
+    median_price_rub: float = 0.0
+    p75_price_rub: float = 0.0
+    max_price_rub: float = 0.0
+
+    # Разбивка по версиям и состояниям
+    editions: Dict[str, "EditionMarketStats"] = Field(default_factory=dict)
+    condition_medians: Dict[str, float] = Field(default_factory=dict)
 
     @property
     def eac_median_price(self) -> Optional[float]:
-        """Медианная цена Ростест-версии или None если нет данных."""
-        stats = self.by_edition.get(EditionType.EAC_ROSTEST)
-        return stats.median_price_rub if stats else None
+        s = self.editions.get(EditionType.EAC_ROSTEST.value)
+        return s.median_price_rub if s else None
