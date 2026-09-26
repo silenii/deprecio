@@ -34,53 +34,46 @@ DEFECT_KEYWORDS: List[str] = [
     "без отпечатка",
 ]
 
-# Паттерны для определения региональной версии устройства
 EDITION_PATTERNS: Dict[EditionType, List[str]] = {
     EditionType.EAC_ROSTEST: [
-        r"\bростест\b",
-        r"\bрст\b",
-        r"\beac\b",
-        r"\bеас\b",
-        r"\bru/a\b",
-        r"\bофициальный\b",
+        "ростест", "rostest", "официальный", "официал", "офиц",
+        "eac", "рст", "гарантия рф", "гарантия россия",
     ],
     EditionType.CN: [
-        r"\bкитай\b",
-        r"\bкитаец\b",
-        r"\bcn\b",
-        r"\bch/a\b",
-        r"\boriginos\b",
-        r"\bкитайская версия\b",
-    ],
-    EditionType.US: [
-        r"\bсша\b",
-        r"\bамериканец\b",
-        r"\busa\b",
-        r"\bll/a\b",
-        r"\besim only\b",
+        "китай", "китайская версия", "cn версия", " cn ", "for china",
+        "chinese", "глобалка без band 20",
     ],
     EditionType.GLOBAL_EU: [
-        r"\bглобал\b",
-        r"\bглобалка\b",
-        r"\bglobal\b",
-        r"\beu\b",
-        r"\bевропеец\b",
-        r"\bzd/a\b",
+        "global", "глобал", "европейская версия", "eu", "international",
+        "международная версия",
+    ],
+    EditionType.US: [
+        "американская версия", "us версия", " us ", "for usa",
+        "esim only", "snapdragon us",
     ],
     EditionType.IN: [
-        r"\bиндия\b",
-        r"\bиндиец\b",
-        r"\bhn/a\b",
+        "индийская версия", " in ", "india", "for india",
     ],
 }
 
 
 def detect_edition_from_text(text: str) -> Optional[EditionType]:
-    """Автоматическое распознавание региональной версии по тексту объявления."""
+    """
+    Определяет региональную версию смартфона по тексту объявления.
+    Приоритет: EAC_ROSTEST > CN > GLOBAL_EU > US > IN.
+    Возвращает None если версия не определена.
+    """
     text_lower = text.lower()
-    for edition, patterns in EDITION_PATTERNS.items():
-        for pattern in patterns:
-            if re.search(pattern, text_lower):
+    priority = [
+        EditionType.EAC_ROSTEST,
+        EditionType.CN,
+        EditionType.GLOBAL_EU,
+        EditionType.US,
+        EditionType.IN,
+    ]
+    for edition in priority:
+        for kw in EDITION_PATTERNS[edition]:
+            if kw in text_lower:
                 return edition
     return None
 
