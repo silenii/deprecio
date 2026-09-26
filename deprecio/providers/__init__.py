@@ -6,6 +6,7 @@ from .gsmarena_client import GSMArenaClient, GSMArenaSearchResult
 from .gsmarena_parser import GSMArenaParser
 from .local_catalog import LocalCatalogProvider
 from .nanoreview import ExternalSpecsAdapter
+from .price_lookup import MsrpLookup
 
 __all__ = [
     "BaseSpecsProvider",
@@ -15,4 +16,5 @@ __all__ = [
     "GSMArenaParser",
     "GSMArenaSearchResult",
     "LocalCatalogProvider",
+    "MsrpLookup",
 ]
