@@ -8,7 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from deprecio.bot.config import BotConfig
-from deprecio.bot.handlers import base_router, device_router, new_releases_router
+from deprecio.bot.handlers import base_router, device_router, inline_router, new_releases_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,6 +30,7 @@ async def run_bot() -> None:
     dp.include_router(base_router)
     dp.include_router(device_router)
     dp.include_router(new_releases_router)
+    dp.include_router(inline_router)
 
     logger.info("Бот Deprecio успешно запущен и ожидает сообщений...")
     try:
