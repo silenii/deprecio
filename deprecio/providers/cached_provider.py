@@ -7,7 +7,7 @@ import sqlite3
 from typing import Dict, List, Optional
 from deprecio.bot.config import BotConfig
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
-from deprecio.models.device import Device, EditionType
+from deprecio.models.device import Device
 from .base import BaseSpecsProvider
 from .gsmarena_client import GSMArenaClient
 from .gsmarena_parser import GSMArenaParser

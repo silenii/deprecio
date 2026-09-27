@@ -1,8 +1,8 @@
 """Parser and Normalizer for GSMArena Specifications into Deprecio Device Model."""
 
 import re
-from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import date
+from typing import Any, Dict, List, Optional
 
 from deprecio.models.device import (
     BundleContents,
@@ -350,7 +350,7 @@ class GSMArenaParser:
         # Шаблон: 256GB 8GB RAM или 1TB 12GB RAM
         pattern = r"(\d+)\s*(GB|TB)\s+(\d+)\s*GB\s+RAM"
         matches = re.findall(pattern, mem_str, re.IGNORECASE)
-        
+
         b_lower = brand.lower()
         # Коэффициент бренда (Apple/Samsung стоят дороже китайских аналогов)
         brand_coef = 1.0
@@ -388,7 +388,7 @@ class GSMArenaParser:
 
             # Добавка за память (грубая оценка: +5000 за каждые 128GB сверх базовых 64)
             storage_premium = max(0, ((storage - 64) / 128.0) * 5000.0)
-            
+
             est_rub = (base_rub + storage_premium) * brand_coef
 
             variants.append(

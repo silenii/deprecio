@@ -351,7 +351,7 @@ async def handle_device_search(message: Message, state: FSMContext) -> None:
     alternatives = [(d.model_id, d.name) for d in matches[1:6]] if len(matches) > 1 else None
 
     card_text = await format_device_card(target)
-    
+
     # Проверка на точное совпадение (если пользователь искал poco x6, а нашли poco x6 pro)
     from deprecio.core.fuzzy_search import normalize_search_text, calculate_match_score
     score = calculate_match_score(message.text, target.name, target.brand)

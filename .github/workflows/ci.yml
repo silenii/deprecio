@@ -25,7 +25,7 @@ jobs:
 
       - name: Check syntax (compile all modules)
         run: |
-          python -m py_compile deprecio/**/*.py
+          python -m py_compile deprecio/bot/*.py deprecio/core/*.py deprecio/models/*.py deprecio/providers/*.py deprecio/harvester/*.py deprecio/cleaner/*.py deprecio/forecast/*.py
           echo "Syntax OK"
 
       - name: Run ruff linter

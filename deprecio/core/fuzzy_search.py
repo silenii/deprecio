@@ -2,7 +2,7 @@
 
 import difflib
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from deprecio.models.device import Device
 
 # Словарь транслитерации частых брендов и названий с русского на латиницу

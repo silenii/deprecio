@@ -38,7 +38,7 @@ def generate_price_forecast(
 ) -> DeviceForecastReport:
     """
     Генерирует прогноз падения цены на основе профиля модели и динамики бренда.
-    
+
     Использует адаптивную формулу затухающего экспоненциального падения:
     P(t) = P_plateau + (P_current - P_plateau) * (1 - decay_rate)^t
     """
@@ -56,15 +56,15 @@ def generate_price_forecast(
         # Экспоненциальное приближение к уровню плато
         decay_factor = (1.0 - decay_rate) ** t
         predicted = plateau_price + (current_price_rub - plateau_price) * decay_factor
-        
+
         # Расчет целевой даты
         target_date = (today + relativedelta(months=t)).isoformat()
-        
+
         # Определение trigger_event
         trigger_event = None
         if t == profile.expected_sweet_spot_months:
             trigger_event = "Sweet Spot"
-        
+
         # Добавление точки прогноза
         points.append(
             ForecastPoint(

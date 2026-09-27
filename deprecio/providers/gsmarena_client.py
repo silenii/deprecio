@@ -1,6 +1,5 @@
 """Asynchronous HTTP Client for GSMArena API and Data Scraping."""
 
-import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 import httpx

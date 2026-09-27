@@ -41,7 +41,7 @@ class SecondaryListing(BaseModel):
     description_text: Optional[str] = Field(None, description="Полный текст описания продавца")
     price_rub: float = Field(..., description="Цена в рублях")
     city: str = Field("Россия", description="Город / регион продажи")
-    
+
     # Распознанные параметры лота
     model_id: Optional[str] = Field(None, description="Определенная модель из каталога")
     detected_edition: Optional[EditionType] = Field(None, description="Распознанная версия (CN, EAC, US и др.)")
@@ -50,7 +50,7 @@ class SecondaryListing(BaseModel):
     condition: ItemCondition = Field(ItemCondition.GOOD, description="Определенное состояние лота")
     bundle: ListingBundle = Field(default_factory=ListingBundle)
     battery_health_percent: Optional[int] = Field(None, description="Остаточная емкость АКБ (%)")
-    
+
     # Статус валидации и очистки
     is_outlier: bool = Field(False, description="Помечено ли объявление как выброс / скам")
     outlier_reason: Optional[str] = Field(None, description="Причина исключения из расчета")

@@ -50,7 +50,7 @@ def calculate_edition_gap(
     """
     Расчет ценового разрыва между двумя региональными версиями (например, CN vs EAC):
     Gap = ((Median_comparison - Median_base) / Median_base) * 100%
-    
+
     Отрицательное значение означает, что comparison-версия дешевле base-версии.
     """
     if not base_prices or not comparison_prices:

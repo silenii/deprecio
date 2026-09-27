@@ -1,9 +1,7 @@
 """Stop-words, defect patterns, and edition keyword matchers for Avito listings."""
 
-import re
 from typing import Dict, List, Optional
 from deprecio.models.device import EditionType
-from deprecio.models.listing import ItemCondition
 
 # Ключевые слова, указывающие на непригодность или серьезный дефект
 DEFECT_KEYWORDS: List[str] = [
