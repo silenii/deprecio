@@ -10,6 +10,7 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
         [
             KeyboardButton(text="🔍 Найти смартфон"),
             KeyboardButton(text="🟢 Зона Sweet Spot"),
+            KeyboardButton(text="🆕 Новинки"),
         ],
         [
             KeyboardButton(text="⚖️ Версии CN vs EAC"),

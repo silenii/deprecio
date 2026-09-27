@@ -7,7 +7,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 from deprecio.bot.config import BotConfig
-from deprecio.bot.handlers import base_router, device_router
+from deprecio.bot.handlers import base_router, device_router, new_releases_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,6 +28,7 @@ async def run_bot() -> None:
     # Регистрация роутеров
     dp.include_router(base_router)
     dp.include_router(device_router)
+    dp.include_router(new_releases_router)
 
     logger.info("Бот Deprecio успешно запущен и ожидает сообщений...")
     try:
