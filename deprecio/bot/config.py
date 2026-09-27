@@ -1,47 +1,30 @@
-"""Configuration and environment settings for Deprecio Telegram Bot."""
+"""Configuration settings for the Deprecio Telegram bot."""
 
-import os
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def load_dotenv(dotenv_path: Optional[Path] = None) -> None:
-    """Простой встроенный загрузчик .env файлов без внешних зависимостей."""
-    path = dotenv_path or Path(".env")
-    if not path.exists():
-        return
+class BotConfig(BaseSettings):
+    """Конфигурация Deprecio из .env / переменных окружения."""
 
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, val = line.split("=", 1)
-                key = key.strip()
-                val = val.strip().strip('"').strip("'")
-                if key and key not in os.environ:
-                    os.environ[key] = val
-    except Exception:
-        pass
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
+    bot_token: str = Field(
+        ...,
+        alias="DEPRECIO_BOT_TOKEN",
+        description="Токен Telegram-бота",
+    )
+    admin_id: int | None = Field(None, alias="ADMIN_ID")
 
-@dataclass
-class BotConfig:
-    """Параметры конфигурации Telegram-бота."""
-    bot_token: str
-    admin_id: Optional[int] = None
+    # Настройки парсинга
+    avito_max_pages: int = Field(3, alias="AVITO_MAX_PAGES")
+    snapshot_ttl_hours: int = Field(24, alias="SNAPSHOT_TTL_HOURS")
+    gsmarena_timeout_sec: float = Field(10.0, alias="GSMARENA_TIMEOUT")
 
     @classmethod
     def from_env(cls) -> "BotConfig":
-        load_dotenv()
-        token = os.getenv("DEPRECIO_BOT_TOKEN") or os.getenv("BOT_TOKEN")
-        if not token:
-            raise ValueError(
-                "Не найден токен Telegram-бота! Задайте его в файле .env (DEPRECIO_BOT_TOKEN='...') "
-                "или в системных переменных окружения."
-            )
-        admin_id_str = os.getenv("ADMIN_ID")
-        admin_id = int(admin_id_str) if admin_id_str and admin_id_str.isdigit() else None
-        return cls(bot_token=token, admin_id=admin_id)
+        return cls()
