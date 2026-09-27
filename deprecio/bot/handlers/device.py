@@ -4,6 +4,8 @@ import asyncio
 from datetime import date
 from typing import Optional
 from aiogram import F, Router
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from deprecio.bot.keyboards import get_back_keyboard, get_device_card_keyboard
@@ -13,6 +15,10 @@ from deprecio.providers import CachedSpecsProvider
 
 router = Router(name="device_router")
 catalog: Optional[CachedSpecsProvider] = None
+
+
+class SearchStates(StatesGroup):
+    waiting_for_query = State()
 
 
 @router.startup()
@@ -94,7 +100,8 @@ async def format_device_card(device: Device) -> str:
 
 
 @router.message(F.text == "🔍 Найти смартфон")
-async def prompt_search(message: Message) -> None:
+async def prompt_search(message: Message, state: FSMContext) -> None:
+    await state.set_state(SearchStates.waiting_for_query)
     await message.answer(
         "Введите название смартфона для поиска (например: *Xiaomi 14* или *iPhone 15*):",
         parse_mode="Markdown",
@@ -317,8 +324,9 @@ async def handle_show_device_callback(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@router.message(F.text)
-async def handle_device_search(message: Message) -> None:
+@router.message(SearchStates.waiting_for_query)
+async def handle_device_search(message: Message, state: FSMContext) -> None:
+    await state.clear()
     if message.text.startswith("/"):
         return
 

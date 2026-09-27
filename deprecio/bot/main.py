@@ -5,6 +5,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from deprecio.bot.config import BotConfig
 from deprecio.bot.handlers import base_router, device_router, new_releases_router
@@ -23,7 +24,7 @@ async def run_bot() -> None:
         token=config.bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN),
     )
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
 
     # Регистрация роутеров
     dp.include_router(base_router)
