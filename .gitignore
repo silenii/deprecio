@@ -47,3 +47,9 @@ env/
 raw_snapshots/
 data/snapshots/
 output/
+
+# Heavy data artifacts
+data/global_devices.db
+data/snapshots/
+.cache/
+*.tmp.db
