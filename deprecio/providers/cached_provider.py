@@ -164,14 +164,25 @@ class CachedSpecsProvider(BaseSpecsProvider):
         if not tokens:
             return []
 
-        clauses = " AND ".join(["clean_name LIKE ?" for _ in tokens])
-        params = [f"%{t}%" for t in tokens]
-
         results = []
         try:
             conn = sqlite3.connect(self.global_db_file)
             cur = conn.cursor()
-            cur.execute(f"SELECT brand, name, raw_specs FROM phones WHERE {clauses} LIMIT 50", params)
+            query_fts = " ".join(f'"{t}"' for t in tokens)
+            try:
+                cur.execute(
+                    "SELECT p.brand, p.name, p.raw_specs FROM phones_fts f "
+                    "JOIN phones p ON f.id = p.id "
+                    "WHERE phones_fts MATCH ? LIMIT 50",
+                    (query_fts,),
+                )
+            except sqlite3.Error:
+                clauses = " AND ".join(["clean_name LIKE ?" for _ in tokens])
+                params = [f"%{t}%" for t in tokens]
+                cur.execute(
+                    f"SELECT brand, name, raw_specs FROM phones WHERE {clauses} LIMIT 50",
+                    params,
+                )
             rows = cur.fetchall()
             conn.close()
 

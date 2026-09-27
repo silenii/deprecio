@@ -155,6 +155,21 @@ def build_global_db(dest_path: Path) -> None:
     cur.execute("CREATE INDEX idx_phones_brand ON phones(brand)")
 
     cur.executemany("INSERT OR REPLACE INTO phones VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
+
+    # Создание FTS5 виртуальной таблицы для быстрого полнотекстового поиска
+    cur.execute(
+        """
+        CREATE VIRTUAL TABLE phones_fts USING fts5(
+            id UNINDEXED,
+            brand,
+            name,
+            clean_name,
+            content=phones,
+            content_rowid=rowid
+        )
+        """
+    )
+    cur.execute("INSERT INTO phones_fts(phones_fts) VALUES('rebuild')")
     conn.commit()
     conn.close()
 
