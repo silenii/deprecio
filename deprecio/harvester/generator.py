@@ -195,6 +195,23 @@ class SnapshotGenerator:
             return None
 
     @classmethod
+    def is_snapshot_fresh(
+        cls,
+        model_id: str,
+        ttl_hours: int = 24,
+        base_dir: Optional[Path] = None,
+    ) -> bool:
+        """Возвращает True если снапшот существует и свежее ttl_hours."""
+        from datetime import datetime, timedelta
+
+        save_dir = base_dir or Path("data/snapshots")
+        file_path = save_dir / f"{model_id}.json"
+        if not file_path.exists():
+            return False
+        age = datetime.now() - datetime.fromtimestamp(file_path.stat().st_mtime)
+        return age < timedelta(hours=ttl_hours)
+
+    @classmethod
     def get_or_create_snapshot(
         cls,
         device: Device,

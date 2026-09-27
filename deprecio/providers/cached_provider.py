@@ -4,8 +4,8 @@ import json
 import asyncio
 from pathlib import Path
 import sqlite3
-import time
 from typing import Dict, List, Optional
+from deprecio.bot.config import BotConfig
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
 from deprecio.models.device import Device, EditionType
 from .base import BaseSpecsProvider
@@ -22,7 +22,9 @@ class CachedSpecsProvider(BaseSpecsProvider):
         client: Optional[GSMArenaClient] = None,
         catalog_file: Optional[Path] = None,
         global_db_file: Optional[Path] = None,
+        config: Optional[BotConfig] = None,
     ):
+        self._config = config
         self.cache_dir = cache_dir or Path(".cache/devices")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.client = client or GSMArenaClient()
@@ -127,16 +129,14 @@ class CachedSpecsProvider(BaseSpecsProvider):
         if not refresh and device.model_id in self._market_stats_cache:
             return self._market_stats_cache[device.model_id]
 
-        snapshot_path = Path("data/snapshots") / f"{device.model_id}.json"
-        snapshot_is_fresh = (
-            snapshot_path.exists()
-            and time.time() - snapshot_path.stat().st_mtime < 24 * 60 * 60
-        )
-        cached = SnapshotGenerator.load_snapshot(device.model_id) if snapshot_is_fresh else None
-        if cached and not refresh:
-            stats = MarketAggregator.aggregate_market_data(device, cached)
-            self._market_stats_cache[device.model_id] = stats
-            return stats
+        ttl = getattr(self, "_config", None)
+        ttl_hours = ttl.snapshot_ttl_hours if ttl else 24
+        if not refresh and SnapshotGenerator.is_snapshot_fresh(device.model_id, ttl_hours):
+            cached = SnapshotGenerator.load_snapshot(device.model_id)
+            if cached:
+                stats = MarketAggregator.aggregate_market_data(device, cached)
+                self._market_stats_cache[device.model_id] = stats
+                return stats
 
         from deprecio.harvester.avito_scraper import AvitoScraper
 
