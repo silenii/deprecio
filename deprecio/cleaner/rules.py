@@ -41,7 +41,8 @@ EDITION_PATTERNS: Dict[EditionType, List[str]] = {
     ],
     EditionType.CN: [
         "китай", "китайская версия", "cn версия", " cn ", "for china",
-        "chinese", "глобалка без band 20",
+        "chinese", "глобалка без band 20", "китаец", "originos",
+        "hyperos cn", "miui cn", "без band 20", "без бенда 20",
     ],
     EditionType.GLOBAL_EU: [
         "global", "глобал", "европейская версия", "eu", "international",
@@ -49,7 +50,7 @@ EDITION_PATTERNS: Dict[EditionType, List[str]] = {
     ],
     EditionType.US: [
         "американская версия", "us версия", " us ", "for usa",
-        "esim only", "snapdragon us",
+        "esim only", "only esim", "snapdragon us", "ll/a", "ll/a)",
     ],
     EditionType.IN: [
         "индийская версия", " in ", "india", "for india",
