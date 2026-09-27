@@ -7,6 +7,7 @@ from .metrics import (
     calculate_depreciation_drop,
     calculate_edition_gap,
     calculate_residual_value,
+    compare_generations,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "calculate_depreciation_drop",
     "calculate_edition_gap",
     "calculate_residual_value",
+    "compare_generations",
 ]

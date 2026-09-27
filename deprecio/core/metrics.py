@@ -66,6 +66,26 @@ def calculate_edition_gap(
     return round(gap, 2)
 
 
+def compare_generations(
+    current_rv: float,
+    prev_rv: float,
+    current_median: float,
+    prev_median: float,
+    current_name: str,
+    prev_name: str,
+) -> dict:
+    """Сравнивает два поколения модели по цене вторичного рынка и RV%."""
+    price_gap = round(((current_median - prev_median) / prev_median) * 100, 1)
+    rv_gap = round(current_rv - prev_rv, 1)
+    if price_gap > 30 and rv_gap < 10:
+        verdict = f"💡 {prev_name} выгоднее: переплата {price_gap}% не оправдана разницей в RV%"
+    elif price_gap < 15:
+        verdict = f"✅ Берите {current_name}: разница в цене минимальна ({price_gap}%)"
+    else:
+        verdict = f"⚖️ Выбор зависит от бюджета. {current_name} дороже на {price_gap}%"
+    return {"price_gap_percent": price_gap, "rv_gap": rv_gap, "verdict": verdict}
+
+
 def analyze_sweet_spot(
     months_since_release: int,
     current_price: float,

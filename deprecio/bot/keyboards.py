@@ -37,6 +37,9 @@ def get_device_card_keyboard(
         [
             InlineKeyboardButton(text="⚖️ Сравнить CN и EAC", callback_data=f"editions:{model_id}"),
         ],
+        [
+            InlineKeyboardButton(text="📊 Сравнить с пред. поколением", callback_data=f"gen_compare:{model_id}"),
+        ],
     ]
 
     if alternative_matches:

@@ -1,12 +1,13 @@
 """Handlers for Smartphone Search, Card Display, and Sweet Spot Analysis."""
 
+import asyncio
 from datetime import date
 from typing import Optional
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message
 
 from deprecio.bot.keyboards import get_back_keyboard, get_device_card_keyboard
-from deprecio.core import analyze_sweet_spot
+from deprecio.core import analyze_sweet_spot, calculate_residual_value, compare_generations
 from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
 
@@ -245,6 +246,57 @@ async def handle_editions_callback(callback: CallbackQuery) -> None:
     )
 
     await callback.message.answer("\n".join(lines), reply_markup=get_back_keyboard(), parse_mode="Markdown")
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("gen_compare:"))
+async def handle_gen_compare(callback: CallbackQuery) -> None:
+    """Сравнивает текущую модель с предыдущим поколением по цене и RV%."""
+    model_id = callback.data.split(":", 1)[1]
+    dev = catalog.get_device(model_id)
+    if not dev:
+        await callback.answer("Модель не найдена.")
+        return
+
+    predecessor_id = dev.lineage.predecessor_id
+    if not predecessor_id:
+        await callback.answer("Для этой модели нет предыдущего поколения.")
+        return
+
+    predecessor = catalog.get_device(predecessor_id)
+    if not predecessor:
+        await callback.answer("Предыдущее поколение не найдено.")
+        return
+
+    def get_msrp_rub(device: Device) -> float:
+        for edition in device.editions:
+            for variant in edition.memory_variants:
+                if variant.currency.value == "RUB":
+                    return variant.msrp_local
+        return 80000.0
+
+    current_stats, previous_stats = await asyncio.gather(
+        catalog.get_market_stats(dev), catalog.get_market_stats(predecessor)
+    )
+    current_median = current_stats.median_price_rub
+    previous_median = previous_stats.median_price_rub
+    result = compare_generations(
+        calculate_residual_value(current_median, get_msrp_rub(dev)),
+        calculate_residual_value(previous_median, get_msrp_rub(predecessor)),
+        current_median,
+        previous_median,
+        dev.name,
+        predecessor.name,
+    )
+    text = (
+        f"📊 **Сравнение поколений**\n\n"
+        f"**{dev.name}**: {current_median:,.0f} ₽, RV {calculate_residual_value(current_median, get_msrp_rub(dev)):.1f}%\n"
+        f"**{predecessor.name}**: {previous_median:,.0f} ₽, RV {calculate_residual_value(previous_median, get_msrp_rub(predecessor)):.1f}%\n\n"
+        f"• Разница в цене: **{result['price_gap_percent']}%**\n"
+        f"• Разница RV: **{result['rv_gap']:+.1f} п.п.**\n\n"
+        f"{result['verdict']}"
+    )
+    await callback.message.answer(text, reply_markup=get_back_keyboard(), parse_mode="Markdown")
     await callback.answer()
 
 
