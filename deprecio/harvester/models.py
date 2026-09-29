@@ -21,6 +21,7 @@ class MarketStats(BaseModel):
     model_id: str
     model_name: str
     snapshot_date: date = Field(default_factory=date.today)
+    updated_at: date = Field(default_factory=date.today)
 
     # Счётчики выборки
     total_raw_listings: int = Field(0, description="Всего объявлений до очистки")

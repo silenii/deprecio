@@ -84,6 +84,8 @@ def test_market_aggregator_cleans_and_calculates_metrics(device):
     assert stats.model_id == device.model_id
     assert stats.total_raw_listings == 35
 
+    assert stats.p25_price_rub > 0
+    assert stats.clean_listings_count > 0
     assert stats.defective_count > 0
     assert stats.outliers_count > 0
     assert stats.clean_listings_count < stats.total_raw_listings
