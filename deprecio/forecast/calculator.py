@@ -42,6 +42,13 @@ def generate_price_forecast(
     Использует адаптивную формулу затухающего экспоненциального падения:
     P(t) = P_plateau + (P_current - P_plateau) * (1 - decay_rate)^t
     """
+    if current_price_rub < 0:
+        raise ValueError("Текущая цена не может быть отрицательной.")
+    if current_price_rub == 0:
+        raise ValueError("Текущая цена не может быть нулевой для расчета RV%.")
+    if months_horizon < 1:
+        raise ValueError("Горизонт прогноза должен быть не меньше одного месяца.")
+
     profile = device.forecast_profile or ForecastProfile()
     today = base_date or date.today()
 

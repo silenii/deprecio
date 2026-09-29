@@ -22,6 +22,20 @@ def test_calculate_residual_value_invalid_msrp():
         calculate_residual_value(current_price=50000, msrp_price=0)
 
 
+def test_calculate_residual_value_rejects_negative_price():
+    import pytest
+
+    with pytest.raises(ValueError):
+        calculate_residual_value(current_price=-1, msrp_price=100000)
+
+
+def test_calculate_residual_value_rejects_negative_msrp():
+    import pytest
+
+    with pytest.raises(ValueError):
+        calculate_residual_value(current_price=50000, msrp_price=-1)
+
+
 def test_calculate_depreciation_drop():
     drop = calculate_depreciation_drop(current_price=65000, msrp_price=100000)
     assert drop == -35.0

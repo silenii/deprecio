@@ -29,6 +29,8 @@ def calculate_residual_value(current_price: float, msrp_price: float) -> float:
     Расчет остаточной стоимости (Residual Value %):
     RV = (P_current / P_msrp) * 100
     """
+    if current_price < 0:
+        raise ValueError("Текущая цена не может быть отрицательной.")
     if msrp_price <= 0:
         raise ValueError("Стартовая розничная цена (MSRP) должна быть строго положительной.")
     return round((current_price / msrp_price) * 100.0, 2)
@@ -56,6 +58,9 @@ def calculate_edition_gap(
     if not base_prices or not comparison_prices:
         return None
 
+    if any(price < 0 for price in [*base_prices, *comparison_prices]):
+        raise ValueError("Цены не могут быть отрицательными.")
+
     median_base = statistics.median(base_prices)
     median_comp = statistics.median(comparison_prices)
 
@@ -75,6 +80,10 @@ def compare_generations(
     prev_name: str,
 ) -> dict:
     """Сравнивает два поколения модели по цене вторичного рынка и RV%."""
+    if current_median < 0 or prev_median < 0:
+        raise ValueError("Цены не могут быть отрицательными.")
+    if prev_median == 0:
+        raise ValueError("Цена предыдущего поколения не может быть нулевой.")
     price_gap = round(((current_median - prev_median) / prev_median) * 100, 1)
     rv_gap = round(current_rv - prev_rv, 1)
     if price_gap > 30 and rv_gap < 10:

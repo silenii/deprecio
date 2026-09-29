@@ -77,3 +77,19 @@ def test_forecast_plateau_lower_bound(device):
         assert p.predicted_price_rub >= plateau, (
             f"Month {p.months_ahead}: {p.predicted_price_rub} < plateau {plateau}"
         )
+
+
+@pytest.mark.parametrize("current_price", [-1.0, 0.0])
+def test_forecast_rejects_non_positive_current_price(device, current_price):
+    with pytest.raises(ValueError):
+        generate_price_forecast(device=device, current_price_rub=current_price)
+
+
+@pytest.mark.parametrize("months_horizon", [0, -1])
+def test_forecast_rejects_invalid_horizon(device, months_horizon):
+    with pytest.raises(ValueError):
+        generate_price_forecast(
+            device=device,
+            current_price_rub=100000.0,
+            months_horizon=months_horizon,
+        )
