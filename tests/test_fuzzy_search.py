@@ -28,6 +28,9 @@ def test_normalize_search_text():
     assert "s24" == normalize_search_text("с24")
     assert "a55" == normalize_search_text("а55")
     assert "2a" == normalize_search_text("2а")
+    assert normalize_search_text("галакси с24 ультра") == "galaxy s24 ultra"
+    assert normalize_search_text("айфон 15 про макс") == "iphone 15 pro max"
+    assert normalize_search_text("ноут 13 про плюс") == "note 13 pro plus"
 
 
 def test_strict_number_discrimination():
@@ -88,6 +91,24 @@ def test_fuzzy_search_russian_translit(sample_devices):
     assert len(results_pixel) > 0
     top_pixel, _ = results_pixel[0]
     assert "Pixel 8" in top_pixel.name
+
+    results_samsung = fuzzy_search_devices("Самсунг Галакси С24", sample_devices, min_score=0.45)
+    assert results_samsung
+    assert "Samsung Galaxy S24" in results_samsung[0][0].name
+
+
+def test_generation_variant_penalty():
+    base = calculate_match_score("Redmi Note 13", "Xiaomi Redmi Note 13", "Xiaomi")
+    pro = calculate_match_score("Redmi Note 13", "Xiaomi Redmi Note 13 Pro", "Xiaomi")
+    assert base > pro
+    assert pro < 0.90
+
+
+def test_nothing_phone_aliases():
+    phone = calculate_match_score("Nothing Phone 2a", "Nothing Phone (2a)", "Nothing")
+    short = calculate_match_score("Nothing 2a", "Nothing Phone (2a)", "Nothing")
+    assert phone >= 0.95
+    assert short >= 0.85
 
 
 def test_cached_provider_fuzzy_integration():

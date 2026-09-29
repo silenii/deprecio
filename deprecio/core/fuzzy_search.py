@@ -13,20 +13,39 @@ BRAND_TRANSLIT: Dict[str, str] = {
     "редми": "redmi",
     "поко": "poco",
     "пиксель": "pixel",
+    "галакси": "galaxy",
     "насинг": "nothing",
+    "нафинг": "nothing",
+    "нотинг": "nothing",
     "ванплас": "oneplus",
     "реалми": "realme",
     "хонор": "honor",
     "виво": "vivo",
+    "васми": "vivo",
     "оппо": "oppo",
     "сони": "sony",
+    "хуавей": "huawei",
     "ультра": "ultra",
     "про": "pro",
+    "про макс": "pro max",
+    "про плюс": "pro plus",
     "плюс": "plus",
     "фон": "phone",
     "ноут": "note",
+    "ноте": "note",
+    "нот": "note",
+    "лайт": "lite",
+    "фолд": "fold",
+    "флип": "flip",
+    "эдж": "edge",
     "мини": "mini",
     "макс": "max",
+}
+
+MULTI_WORD_TRANSLIT = {
+    "про макс": "pro max",
+    "про плюс": "pro plus",
+    "самсунг галакси": "samsung galaxy",
 }
 
 
@@ -36,6 +55,10 @@ def normalize_search_text(text: str) -> str:
 
     # Замена скобок и спецсимволов на пробелы
     s = re.sub(r"[\(\)\[\]\-_,/\.]", " ", s)
+    # Замена многословной транслитерации до разбивки по словам
+    for ru, en in MULTI_WORD_TRANSLIT.items():
+        s = s.replace(ru, en)
+
 
     # Транслитерация частых слов
     words = s.split()
@@ -170,7 +193,18 @@ def calculate_match_score(query: str, target_name: str, brand: str) -> float:
         elif len(overlap) < len(query_codes):
             score *= 0.75
 
-    return score
+    # A bare generation is a better match for a bare query than a higher-tier
+    # variant ("Redmi Note 13" must rank above "Redmi Note 13 Pro").  Do not
+    # penalise the reverse query: asking for Pro should still find Pro first.
+    variant_tokens = {"pro", "ultra", "plus", "max", "lite", "edge"}
+    query_tokens = set(clean_q.split())
+    target_tokens = set(clean_t.split())
+    if not query_tokens.intersection(variant_tokens):
+        extra_variants = target_tokens.intersection(variant_tokens)
+        if extra_variants:
+            score *= 0.80
+
+    return round(score, 3)
 
 
 def fuzzy_search_devices(
