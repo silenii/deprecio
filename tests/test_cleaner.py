@@ -64,6 +64,36 @@ class TestListingCleaner(unittest.TestCase):
         self.assertEqual(outliers[0].listing_id, "7")
         self.assertIn("вне диапазона IQR", outliers[0].outlier_reason)
 
+    def test_sanitizer_small_samples_do_not_use_iqr(self):
+        for size in range(3):
+            listings = [
+                SecondaryListing(listing_id=str(index), title="Обычный лот", price_rub=10000 + index)
+                for index in range(size)
+            ]
+            valid, outliers = ListingSanitizer.filter_price_outliers_iqr(listings)
+            self.assertEqual(valid, listings)
+            self.assertEqual(outliers, [])
+
+    def test_sanitizer_same_prices_are_valid(self):
+        listings = [
+            SecondaryListing(listing_id=str(index), title="Обычный лот", price_rub=25000)
+            for index in range(6)
+        ]
+        valid, outliers = ListingSanitizer.filter_price_outliers_iqr(listings)
+        self.assertEqual(valid, listings)
+        self.assertEqual(outliers, [])
+
+    def test_sanitizer_defective_listing_never_returns_as_valid(self):
+        listing = SecondaryListing(
+            listing_id="defective",
+            title="Телефон разбит",
+            price_rub=10000,
+            condition=ItemCondition.DEFECTIVE,
+        )
+        valid, outliers = ListingSanitizer.filter_price_outliers_iqr([listing])
+        self.assertEqual(valid, [])
+        self.assertEqual(outliers, [listing])
+
 
 if __name__ == "__main__":
     unittest.main()

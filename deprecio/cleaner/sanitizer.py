@@ -42,19 +42,32 @@ class ListingSanitizer:
 
         Возвращает кортеж: (валидные_объявления, выбросы).
         """
-        # Берем только недефектные объявления для расчета квантилей
-        candidates = [item for item in listings if not item.is_outlier]
+        def is_invalid(item: SecondaryListing) -> bool:
+            return item.is_outlier or item.condition in (
+                ItemCondition.DEFECTIVE,
+                ItemCondition.FOR_PARTS,
+            )
+
+        # Берем только недефектные объявления для расчета квантилей.
+        candidates = [item for item in listings if not is_invalid(item)]
         if len(candidates) < 4:
             # Слишком малая выборка для расчета статистического IQR
-            valid = [item for item in listings if not item.is_outlier]
-            outliers = [item for item in listings if item.is_outlier]
+            valid = [item for item in listings if not is_invalid(item)]
+            outliers = [item for item in listings if is_invalid(item)]
             return valid, outliers
 
         prices = sorted([item.price_rub for item in candidates])
         n = len(prices)
 
-        q1 = prices[int(n * 0.25)]
-        q3 = prices[int(n * 0.75)]
+        def percentile(percent: float) -> float:
+            position = (n - 1) * percent
+            lower = int(position)
+            upper = min(lower + 1, n - 1)
+            fraction = position - lower
+            return prices[lower] + (prices[upper] - prices[lower]) * fraction
+
+        q1 = percentile(0.25)
+        q3 = percentile(0.75)
         iqr = q3 - q1
 
         lower_bound = max(0, q1 - iqr_multiplier * iqr)
@@ -64,7 +77,7 @@ class ListingSanitizer:
         outlier_items: List[SecondaryListing] = []
 
         for item in listings:
-            if item.is_outlier:
+            if is_invalid(item):
                 outlier_items.append(item)
                 continue
 
