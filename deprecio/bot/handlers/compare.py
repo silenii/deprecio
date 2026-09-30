@@ -8,6 +8,7 @@ from aiogram.types import Message
 
 from deprecio.core import analyze_sweet_spot, calculate_residual_value
 from deprecio.providers import CachedSpecsProvider
+from deprecio.core.analytics_defaults import device_msrp_rub
 
 router = Router(name="compare_router")
 catalog = CachedSpecsProvider()
@@ -19,12 +20,8 @@ class CompareStates(StatesGroup):
 
 
 def _msrp_rub(device) -> float:
-    """Return the first known Russian MSRP, with a conservative fallback."""
-    for edition in device.editions:
-        for variant in edition.memory_variants:
-            if variant.currency.value == "RUB" and variant.msrp_local > 0:
-                return variant.msrp_local
-    return 80000.0
+    """Return normalized MSRP using the shared analytical defaults."""
+    return device_msrp_rub(device)
 
 
 async def _find_device(query: str):

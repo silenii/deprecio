@@ -4,6 +4,7 @@ import json
 from html.parser import HTMLParser
 from typing import Any, Optional
 import httpx
+from deprecio.core.analytics_defaults import default_parameters
 
 
 class _NextDataParser(HTMLParser):
@@ -114,8 +115,8 @@ class MsrpLookup:
             return None
 
     async def get_msrp_with_fallback(
-        self, model_name: str, fallback_rub: float = 80000.0
+        self, model_name: str, tier: str = "Mid-range", brand: str = ""
     ) -> float:
-        """Return the found MSRP or ``fallback_rub`` when lookup fails."""
+        """Return found MSRP or the shared Tier/brand analytical default."""
         result = await self.fetch_msrp_rub(model_name)
-        return result if result and result > 10000 else fallback_rub
+        return result if result and result > 0 else default_parameters(tier, brand)["msrp_rub"]

@@ -12,6 +12,7 @@ from deprecio.bot.keyboards import get_back_keyboard, get_device_card_keyboard
 from deprecio.core import analyze_sweet_spot, calculate_residual_value, compare_generations
 from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
+from deprecio.core.analytics_defaults import device_msrp_rub
 
 router = Router(name="device_router")
 catalog: Optional[CachedSpecsProvider] = None
@@ -38,7 +39,7 @@ async def format_device_card(device: Device) -> str:
         "📦 **Доступные версии и комплектация:**",
     ]
 
-    base_msrp_rub = 80000.0  # Опорная цена по умолчанию
+    base_msrp_rub = device_msrp_rub(device)
     first_release_date: Optional[date] = None
 
     for ed in device.editions:
@@ -62,8 +63,7 @@ async def format_device_card(device: Device) -> str:
         if ed.memory_variants:
             mv = ed.memory_variants[0]
             lines.append(f"  └ *Старт ({mv.ram_gb}/{mv.storage_gb}GB):* {mv.msrp_local:,.0f} {mv.currency.value}")
-            if mv.currency.value == "RUB":
-                base_msrp_rub = mv.msrp_local
+            base_msrp_rub = device_msrp_rub(device)
 
         if ed.release_date and (not first_release_date or ed.release_date < first_release_date):
             first_release_date = ed.release_date
@@ -280,7 +280,7 @@ async def handle_gen_compare(callback: CallbackQuery) -> None:
             for variant in edition.memory_variants:
                 if variant.currency.value == "RUB":
                     return variant.msrp_local
-        return 80000.0
+        return device_msrp_rub(device)
 
     current_stats, previous_stats = await asyncio.gather(
         catalog.get_market_stats(dev), catalog.get_market_stats(predecessor)

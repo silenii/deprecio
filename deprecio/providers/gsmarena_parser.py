@@ -15,6 +15,7 @@ from deprecio.models.device import (
     MemoryVariant,
     RegionalEdition,
 )
+from deprecio.core.analytics_defaults import default_parameters
 
 
 class GSMArenaParser:
@@ -41,6 +42,8 @@ class GSMArenaParser:
 
         # 2. Дата релиза
         release_date = cls._parse_launch_date(specs.get("announced") or specs.get("status"))
+        defaults = default_parameters(cls._estimate_tier(name), brand)
+        release_date = release_date or defaults["release_date"]
 
         # 3. Сеть и бэнды
         network_str = f"{specs.get('technology', '')} {specs.get('4g_bands', '')} {specs.get('5g_bands', '')}"
@@ -77,8 +80,7 @@ class GSMArenaParser:
         rel_year = release_date.year if release_date else None
         variants = cls._parse_memory_variants(memory_str, brand, tier, release_year=rel_year)
         if not variants:
-            default_msrp = 19990.0 if (rel_year and rel_year <= 2019) else 49990.0
-            variants = [MemoryVariant(ram_gb=4 if (rel_year and rel_year <= 2019) else 8, storage_gb=64 if (rel_year and rel_year <= 2019) else 128, msrp_local=default_msrp, currency=Currency.RUB)]
+            variants = [MemoryVariant(ram_gb=defaults["ram_gb"], storage_gb=defaults["storage_gb"], msrp_local=defaults["msrp_rub"], currency=Currency.RUB)]
 
         # 8. Сборка версий (Global / EAC)
         # 8. Сборка версий (Ростест/EAC, Global, CN, US)

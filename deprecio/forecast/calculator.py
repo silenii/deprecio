@@ -5,6 +5,12 @@ from datetime import date
 from typing import List, Optional
 from dateutil.relativedelta import relativedelta
 from deprecio.models.device import Device, ForecastProfile
+from deprecio.core.analytics_defaults import device_msrp_rub
+
+
+def get_device_msrp_rub(device: Device) -> float:
+    """Return a normalized MSRP for forecast callers with incomplete catalog data."""
+    return device_msrp_rub(device)
 
 
 
