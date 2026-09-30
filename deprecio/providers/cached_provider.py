@@ -9,6 +9,7 @@ from deprecio.bot.config import BotConfig
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
 from deprecio.models.device import Device
 from .base import BaseSpecsProvider
+from .exceptions import CatalogDataError, DeviceNotFoundError
 from .gsmarena_client import GSMArenaClient
 from .gsmarena_parser import GSMArenaParser
 
@@ -73,8 +74,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
                                 variants=first_ed.memory_variants,
                             )
                     self._memory_cache[dev.model_id] = dev
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise CatalogDataError(f"Invalid catalog file: {self.catalog_file}") from exc
 
     def _load_disk_cache(self) -> None:
         """Загружает сохраненные ранее модели из локального дискового кэша."""
@@ -84,8 +85,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
                     data = json.load(f)
                     dev = Device(**data)
                     self._memory_cache[dev.model_id] = dev
-            except Exception:
-                continue
+            except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                raise CatalogDataError(f"Invalid cache file: {json_file}") from exc
 
     def _save_to_disk_cache(self, device: Device) -> None:
         """Сохраняет распарсенную модель на диск."""
@@ -97,7 +98,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         except Exception:
             pass
 
-    def get_device(self, model_id: str) -> Optional[Device]:
+    def get_device(self, model_id: str) -> Device:
         dev = self._memory_cache.get(model_id)
         if dev:
             return dev
@@ -118,9 +119,9 @@ class CachedSpecsProvider(BaseSpecsProvider):
                     if parsed:
                         self._memory_cache[parsed.model_id] = parsed
                         return parsed
-            except Exception:
-                pass
-        return None
+            except (sqlite3.DatabaseError, json.JSONDecodeError) as exc:
+                raise CatalogDataError(f"Invalid device database: {self.global_db_file}") from exc
+        raise DeviceNotFoundError(model_id)
 
     async def get_market_stats(self, device: Device, refresh: bool = False):
         """Получает статистику рынка из Avito с многоуровневым кешированием."""
@@ -200,14 +201,21 @@ class CachedSpecsProvider(BaseSpecsProvider):
                         results.append((dev, score))
 
             results.sort(key=lambda x: x[1], reverse=True)
-            devices = [dev for dev, _ in results[:limit]]
+            devices = []
+            seen = set()
+            for dev, _ in results:
+                if dev.model_id not in seen:
+                    seen.add(dev.model_id)
+                    devices.append(dev)
+                if len(devices) == limit:
+                    break
             for dev in devices:
                 self._memory_cache[dev.model_id] = dev
             return devices
-        except Exception as e:
+        except (sqlite3.DatabaseError, OSError) as e:
             import logging
             logging.exception(f"Error during SQLite search for '{query}': {e}")
-            return []
+            raise CatalogDataError(f"Invalid device database: {self.global_db_file}") from e
 
     def search_devices(self, query: str) -> List[Device]:
         """Умный поиск: сначала по избранному каталогу, затем по глобальной базе 10 600+ моделей."""
@@ -218,7 +226,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         # 1. Поиск по закэшированным и избранным устройствам
         curated_matches = fuzzy_search_devices(q, list(self._memory_cache.values()), min_score=0.45)
         if curated_matches and curated_matches[0][1] >= 0.85:
-            return [dev for dev, _ in curated_matches]
+            return self._unique_devices(dev for dev, _ in curated_matches)
 
         # 2. Если уверенного совпадения нет — ищем в глобальной базе GSMArena (10 600+ моделей)
         global_matches = self._search_global_db(q)
@@ -229,9 +237,17 @@ class CachedSpecsProvider(BaseSpecsProvider):
                 if dev.model_id not in seen:
                     seen.add(dev.model_id)
                     combined.append(dev)
-            return combined
+            return self._unique_devices(combined)
 
-        return [dev for dev, _ in curated_matches]
+        return self._unique_devices(dev for dev, _ in curated_matches)
+
+    @staticmethod
+    def _unique_devices(devices):
+        """Return devices in order while keeping only one instance per model ID."""
+        unique = {}
+        for device in devices:
+            unique.setdefault(device.model_id, device)
+        return list(unique.values())
 
     async def get_or_fetch_device(self, query: str) -> Optional[Device]:
         """

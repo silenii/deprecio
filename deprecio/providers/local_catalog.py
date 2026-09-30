@@ -6,6 +6,7 @@ import yaml
 
 from deprecio.models.device import Device
 from .base import BaseSpecsProvider
+from .exceptions import CatalogDataError, DeviceNotFoundError
 
 
 class LocalCatalogProvider(BaseSpecsProvider):
@@ -29,12 +30,14 @@ class LocalCatalogProvider(BaseSpecsProvider):
                     if data and "model_id" in data:
                         device = Device(**data)
                         self._devices[device.model_id] = device
-            except Exception:
-                # Пропуск некорректных или черновых файлов
-                continue
+            except (OSError, yaml.YAMLError, TypeError, ValueError) as exc:
+                raise CatalogDataError(f"Invalid catalog file: {yaml_file}") from exc
 
-    def get_device(self, model_id: str) -> Optional[Device]:
-        return self._devices.get(model_id)
+    def get_device(self, model_id: str) -> Device:
+        try:
+            return self._devices[model_id]
+        except KeyError as exc:
+            raise DeviceNotFoundError(model_id) from exc
 
     def search_devices(self, query: str) -> List[Device]:
         q = query.lower().strip()

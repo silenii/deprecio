@@ -9,7 +9,7 @@ class BaseSpecsProvider(ABC):
     """Базовый интерфейс поставщика спецификаций и аналогов смартфонов."""
 
     @abstractmethod
-    def get_device(self, model_id: str) -> Optional[Device]:
+    def get_device(self, model_id: str) -> Device:
         """Получить полную карточку смартфона по его ID."""
         pass
 
