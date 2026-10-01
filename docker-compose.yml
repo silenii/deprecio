@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - deprecio-cache:/app/.cache
+
+volumes:
+  deprecio-cache:

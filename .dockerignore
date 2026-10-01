@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.cache
+tests
+raw_snapshots
+data/snapshots
+CONTINUATION_PROMPTS.md
