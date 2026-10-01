@@ -1,7 +1,8 @@
 """Base command handlers for /start, /help, and educational guides."""
 
 from aiogram import F, Router
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandStart, StateFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from deprecio.bot.keyboards import get_back_keyboard, get_main_menu_keyboard
 
@@ -9,7 +10,8 @@ router = Router(name="base_router")
 
 
 @router.message(CommandStart())
-async def handle_start(message: Message) -> None:
+async def handle_start(message: Message, state: FSMContext) -> None:
+    await state.clear()
     text = (
         "👋 **Добро пожаловать в Deprecio!**\n\n"
         "Я аналитический бот по вторичному рынку смартфонов.\n"
@@ -21,6 +23,23 @@ async def handle_start(message: Message) -> None:
         "Нажмите кнопку ниже или просто напишите название модели (например, *Xiaomi 14* или *iPhone 15*):"
     )
     await message.answer(text, reply_markup=get_main_menu_keyboard(), parse_mode="Markdown")
+
+
+@router.message(StateFilter("*"), Command("cancel"))
+async def handle_cancel(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer("Текущая операция отменена.", reply_markup=get_main_menu_keyboard())
+
+
+@router.message(StateFilter("*"), F.text == "❌ Отмена")
+async def handle_cancel_button(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer("Текущая операция отменена.", reply_markup=get_main_menu_keyboard())
+
+
+@router.message(F.text.is_(None))
+async def handle_empty_message(message: Message) -> None:
+    await message.answer("Пожалуйста, отправьте название модели текстом или выберите пункт меню.")
 
 
 @router.message(Command("help"))

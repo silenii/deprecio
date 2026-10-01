@@ -14,13 +14,6 @@ from deprecio.models.device import Device
 from deprecio.providers import CachedSpecsProvider
 
 router = Router(name="new_releases_router")
-catalog: Optional[CachedSpecsProvider] = None
-
-
-@router.startup()
-async def on_startup() -> None:
-    global catalog
-    catalog = CachedSpecsProvider()
 
 
 def _release_date(device: Device) -> Optional[date]:
@@ -41,8 +34,7 @@ def _month_label(iso_date: str) -> str:
 
 @router.message(Command("new"))
 @router.message(F.text == "🆕 Новинки")
-async def handle_new_releases(message: Message) -> None:
-    assert catalog is not None
+async def handle_new_releases(message: Message, catalog: CachedSpecsProvider) -> None:
     today = date.today()
     cutoff = today - timedelta(days=90)
     devices = []

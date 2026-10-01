@@ -6,11 +6,10 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 from deprecio.providers import CachedSpecsProvider
 
 router = Router()
-catalog = CachedSpecsProvider()
 
 
 @router.inline_query()
-async def handle_inline_search(query: InlineQuery) -> None:
+async def handle_inline_search(query: InlineQuery, catalog: CachedSpecsProvider) -> None:
     q = query.query.strip()
     if len(q) < 2:
         await query.answer([], cache_time=1)

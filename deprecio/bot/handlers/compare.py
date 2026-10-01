@@ -8,10 +8,10 @@ from aiogram.types import Message
 
 from deprecio.core import analyze_sweet_spot, calculate_residual_value
 from deprecio.providers import CachedSpecsProvider
+from deprecio.harvester import MarketAggregator
 from deprecio.core.analytics_defaults import device_msrp_rub
 
 router = Router(name="compare_router")
-catalog = CachedSpecsProvider()
 
 
 class CompareStates(StatesGroup):
@@ -24,7 +24,7 @@ def _msrp_rub(device) -> float:
     return device_msrp_rub(device)
 
 
-async def _find_device(query: str):
+async def _find_device(query: str, catalog: CachedSpecsProvider):
     matches = catalog.search_devices(query)
     return matches[0] if matches else await catalog.get_or_fetch_device(query)
 
@@ -44,7 +44,7 @@ def _table(rows: list[tuple[str, str, str]]) -> str:
     return "\n".join(lines)
 
 
-async def _comparison(first, second) -> str:
+async def _comparison(first, second, catalog: CachedSpecsProvider, market_aggregator: MarketAggregator) -> str:
     first_stats, second_stats = await catalog.get_market_stats(first), await catalog.get_market_stats(second)
     first_price, second_price = first_stats.median_price_rub, second_stats.median_price_rub
     first_rv = calculate_residual_value(first_price, _msrp_rub(first))
@@ -97,15 +97,16 @@ async def receive_first(message: Message, state: FSMContext) -> None:
 
 
 @router.message(CompareStates.waiting_second)
-async def receive_second(message: Message, state: FSMContext) -> None:
+async def receive_second(message: Message, state: FSMContext, catalog: CachedSpecsProvider,
+                         market_aggregator: MarketAggregator) -> None:
     if not message.text or message.text.startswith("/"):
         await message.answer("Введите название второй модели текстом:")
         return
     data = await state.get_data()
     await state.clear()
-    first = await _find_device(data["first_query"])
-    second = await _find_device(message.text.strip())
+    first = await _find_device(data["first_query"], catalog)
+    second = await _find_device(message.text.strip(), catalog)
     if not first or not second:
         await message.answer("Не удалось найти одну из моделей. Попробуйте ещё раз через /compare.")
         return
-    await message.answer(await _comparison(first, second), parse_mode="Markdown")
+    await message.answer(await _comparison(first, second, catalog, market_aggregator), parse_mode="Markdown")

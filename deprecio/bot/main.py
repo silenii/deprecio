@@ -6,9 +6,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import ErrorEvent
 
 from deprecio.bot.config import BotConfig
 from deprecio.bot.handlers import base_router, compare_router, device_router, inline_router, new_releases_router
+from deprecio.bot.dependencies import build_dependencies
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +27,17 @@ async def run_bot() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN),
     )
     dp = Dispatcher(storage=MemoryStorage())
+    catalog, market_aggregator = build_dependencies()
+    dp["catalog"] = catalog
+    dp["market_aggregator"] = market_aggregator
+
+    @dp.error()
+    async def handle_bot_error(event: ErrorEvent) -> bool:
+        if event.update.message:
+            await event.update.message.answer(
+                "Не удалось получить данные сейчас. Попробуйте повторить запрос немного позже."
+            )
+        return True
 
     # Регистрация роутеров
     dp.include_router(base_router)
