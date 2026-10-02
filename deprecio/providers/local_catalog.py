@@ -53,14 +53,7 @@ class LocalCatalogProvider(BaseSpecsProvider):
         price_target_rub: Optional[float] = None,
         tolerance_percent: float = 0.15,
     ) -> List[Device]:
-        """Подбирает аналоги по совпадению класса линейки (tier) за вычетом самой модели."""
-        analogs: List[Device] = []
-        for candidate in self._devices.values():
-            if candidate.model_id == device.model_id:
-                continue
-
-            # Проверка соответствия классу устройства (Flagship, Sub-flagship и т.д.)
-            if candidate.lineage.tier == device.lineage.tier:
-                analogs.append(candidate)
-
-        return analogs
+        """Подбирает аналоги с общими правилами tier и ценового диапазона."""
+        return self.filter_analogs(
+            device, self._devices.values(), price_target_rub, tolerance_percent
+        )

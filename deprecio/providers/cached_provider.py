@@ -286,11 +286,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         price_target_rub: Optional[float] = None,
         tolerance_percent: float = 0.15,
     ) -> List[Device]:
-        """Поиск аналогов среди закэшированных устройств того же класса."""
-        analogs: List[Device] = []
-        for candidate in self._memory_cache.values():
-            if candidate.model_id == device.model_id:
-                continue
-            if candidate.lineage.tier == device.lineage.tier:
-                analogs.append(candidate)
-        return analogs
+        """Поиск аналогов с общими правилами tier и ценового диапазона."""
+        return self.filter_analogs(
+            device, self._memory_cache.values(), price_target_rub, tolerance_percent
+        )
