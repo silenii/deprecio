@@ -32,6 +32,8 @@ deprecio/
 
 `data/` содержит исходные данные и локальное хранилище каталога. Бот создаёт провайдеры каталога и агрегатор рынка, регистрирует роутеры и запускает long polling. API подключает маршруты устройств и прогнозов под префиксом `/api/v1`.
 
+API по умолчанию использует `CachedSpecsProvider`: он читает основной каталог из `data/catalog.json` и при необходимости ищет дополнительные устройства в `data/global_devices.db`. Тесты и интеграции могут заменить его через FastAPI `app.dependency_overrides`.
+
 Стек: Python 3.11+, Pydantic, FastAPI, aiogram, pytest, Ruff и Docker.
 
 ## Структура `data/`

@@ -55,3 +55,23 @@ def test_missing_device_returns_404(sample_device):
         assert response.status_code == 404
     finally:
         app.dependency_overrides.clear()
+
+
+def test_default_provider_searches_existing_catalog_without_override():
+    response = TestClient(app).get("/api/v1/devices/search", params={"query": "Xiaomi 14"})
+
+    assert response.status_code == 200
+    assert any(device["model_id"] == "xiaomi-14" for device in response.json())
+
+
+def test_default_provider_returns_device_card_without_override():
+    response = TestClient(app).get("/api/v1/devices/xiaomi-14")
+
+    assert response.status_code == 200
+    assert response.json()["model_id"] == "xiaomi-14"
+
+
+def test_default_provider_returns_404_for_unknown_device_without_override():
+    response = TestClient(app).get("/api/v1/devices/not-in-catalog")
+
+    assert response.status_code == 404

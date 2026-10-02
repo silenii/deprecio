@@ -1,11 +1,8 @@
 """FastAPI dependencies for API providers."""
 
-from functools import lru_cache
-
-from deprecio.providers.local_catalog import LocalCatalogProvider
+from deprecio.providers.cached_provider import CachedSpecsProvider
 
 
-@lru_cache
-def get_specs_provider() -> LocalCatalogProvider:
-    """Return the application-wide catalog provider."""
-    return LocalCatalogProvider()
+def get_specs_provider() -> CachedSpecsProvider:
+    """Create the API catalog provider from the current local data sources."""
+    return CachedSpecsProvider()
