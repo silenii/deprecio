@@ -28,22 +28,32 @@ class MarketAggregator:
 
         # 1. Классификация и отсечение дефектов
         classified_listings: List[SecondaryListing] = []
-        defective_count = 0
         for item in raw_listings:
             clean_item = ListingSanitizer.classify_and_filter_defects(item)
-            if clean_item.is_outlier and clean_item.condition == ItemCondition.DEFECTIVE:
-                defective_count += 1
             classified_listings.append(clean_item)
+
+        defective_count = sum(
+            item.condition in (ItemCondition.DEFECTIVE, ItemCondition.FOR_PARTS)
+            for item in classified_listings
+        )
 
         # 2. IQR фильтрация аномальных цен
         valid_listings, outliers = ListingSanitizer.filter_price_outliers_iqr(classified_listings)
-        outliers_count = len(outliers) - defective_count
+        outliers_count = sum(
+            item.condition not in (ItemCondition.DEFECTIVE, ItemCondition.FOR_PARTS)
+            for item in outliers
+        )
 
         if not valid_listings:
-            # Если после очистки ничего не осталось, берем сырые недефектные цены
-            valid_listings = [it for it in classified_listings if it.condition != ItemCondition.DEFECTIVE]
-            if not valid_listings:
-                valid_listings = raw_listings
+            # Не подменяем пустой результат исходными или дефектными объявлениями.
+            return MarketStats(
+                model_id=device.model_id,
+                model_name=device.name,
+                total_raw_listings=total_raw,
+                defective_count=defective_count,
+                outliers_count=outliers_count,
+                updated_at=date.today(),
+            )
 
         prices = sorted([item.price_rub for item in valid_listings])
         n = len(prices)

@@ -11,6 +11,7 @@ from deprecio.models.device import (
     HardwareSpecs, BundleContents, MemoryVariant, RegionalEdition,
 )
 from deprecio.models.listing import ItemCondition, MarketPlatform
+from deprecio.models.listing import SecondaryListing
 from deprecio.providers import CachedSpecsProvider
 
 
@@ -94,6 +95,75 @@ def test_market_aggregator_cleans_and_calculates_metrics(device):
     assert stats.p25_price_rub <= stats.median_price_rub
     assert stats.median_price_rub <= stats.p75_price_rub
     assert stats.p75_price_rub <= stats.max_price_rub
+
+
+def test_market_aggregator_empty_result_has_zero_metrics(device):
+    stats = MarketAggregator.aggregate_market_data(device, [])
+
+    assert stats.total_raw_listings == 0
+    assert stats.clean_listings_count == 0
+    assert stats.defective_count == 0
+    assert stats.outliers_count == 0
+    assert all(getattr(stats, field) == 0 for field in (
+        "min_price_rub", "p25_price_rub", "median_price_rub", "p75_price_rub", "max_price_rub",
+    ))
+    assert stats.editions == {}
+    assert stats.condition_medians == {}
+
+
+def test_market_aggregator_never_returns_defective_fallback(device):
+    listings = [SecondaryListing(listing_id="bad", title="Телефон на запчасти", price_rub=10000)]
+
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+
+    assert stats.clean_listings_count == 0
+    assert stats.defective_count == 1
+    assert stats.outliers_count == 0
+    assert stats.median_price_rub == 0
+
+
+def test_market_aggregator_all_unrealistic_prices_are_empty(device):
+    listings = [
+        SecondaryListing(listing_id=str(index), title="Обычный телефон", price_rub=500)
+        for index in range(4)
+    ]
+
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+
+    assert stats.clean_listings_count == 0
+    assert stats.defective_count == 0
+    assert stats.outliers_count == 4
+    assert stats.editions == {}
+
+
+def test_market_aggregator_mixed_sample_does_not_double_count(device):
+    listings = [
+        SecondaryListing(listing_id="defective", title="Трещина на экране", price_rub=15000),
+        SecondaryListing(listing_id="low", title="Обычный телефон", price_rub=500),
+        *[
+            SecondaryListing(listing_id=str(index), title="Обычный телефон", price_rub=40000 + index * 1000)
+            for index in range(4)
+        ],
+    ]
+
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+
+    assert stats.defective_count == 1
+    assert stats.outliers_count == 1
+    assert stats.clean_listings_count == 4
+
+
+def test_market_aggregator_same_prices_remain_valid(device):
+    listings = [
+        SecondaryListing(listing_id=str(index), title="Обычный телефон", price_rub=25000)
+        for index in range(6)
+    ]
+
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+
+    assert stats.clean_listings_count == 6
+    assert stats.outliers_count == 0
+    assert stats.median_price_rub == 25000
 
 
 def test_edition_price_gap_cn_vs_eac(device):
