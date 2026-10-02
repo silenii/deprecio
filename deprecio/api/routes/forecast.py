@@ -16,7 +16,7 @@ Provider = Annotated[BaseSpecsProvider, Depends(get_specs_provider)]
 
 
 class ForecastResponse(BaseModel):
-    """JSON representation of the forecast report."""
+    """JSON representation; point RV percentages use the current price base."""
 
     device_id: str
     device_name: str

@@ -71,9 +71,22 @@ class DeviceLineage(BaseModel):
 
 class ForecastProfile(BaseModel):
     """Параметры предиктивной модели уценки."""
-    brand_decay_monthly_rate: float = Field(0.045, description="Ожидаемый темп уценки в месяц (% от текущей)")
-    expected_sweet_spot_months: int = Field(6, description="Срок выхода на ценовое плато (мес)")
-    historical_plateau_rv: float = Field(0.60, description="Типичная остаточная стоимость на плато (60% = 0.60)")
+    brand_decay_monthly_rate: float = Field(
+        0.045,
+        ge=0,
+        lt=1,
+        description="Доля текущей цены, теряемая за месяц (0 <= rate < 1)",
+    )
+    expected_sweet_spot_months: int = Field(
+        6,
+        gt=0,
+        description="Положительный срок выхода на ценовое плато (мес)",
+    )
+    historical_plateau_rv: float = Field(
+        0.60,
+        ge=0,
+        description="Остаточная стоимость на плато относительно текущей цены (60% = 0.60)",
+    )
 
 
 class Device(BaseModel):

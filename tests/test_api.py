@@ -44,6 +44,7 @@ def test_forecast_endpoint(sample_device):
         )
         assert response.status_code == 200
         assert len(response.json()["points"]) == 2
+        assert response.json()["points"][0]["predicted_rv_percent"] < 100
     finally:
         app.dependency_overrides.clear()
 

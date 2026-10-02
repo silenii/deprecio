@@ -221,3 +221,41 @@ def test_months_horizon_respected(test_device, base_date):
             base_date=base_date,
         )
         assert len(report.points) == horizon
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("brand_decay_monthly_rate", -0.01),
+        ("brand_decay_monthly_rate", 1.0),
+        ("historical_plateau_rv", -0.01),
+        ("expected_sweet_spot_months", 0),
+    ],
+)
+def test_forecast_profile_rejects_invalid_values(field, value):
+    with pytest.raises(ValueError):
+        ForecastProfile(**{field: value})
+
+
+def test_forecast_is_stable_for_120_months(test_device, base_date):
+    report = generate_price_forecast(test_device, 60000, months_horizon=120, base_date=base_date)
+
+    assert len(report.points) == 120
+    assert all(point.predicted_price_rub >= 0 for point in report.points)
+    assert all(point.predicted_rv_percent >= 0 for point in report.points)
+    assert report.points[-1].predicted_price_rub >= 60000 * 0.60
+
+
+def test_plateau_above_current_price_is_capped(lineage, base_date):
+    device = Device(
+        model_id="test-device",
+        name="Test Device",
+        brand="TestBrand",
+        lineage=lineage,
+        forecast_profile=ForecastProfile(historical_plateau_rv=1.5),
+    )
+
+    report = generate_price_forecast(device, 60000, months_horizon=12, base_date=base_date)
+
+    assert all(point.predicted_price_rub == 60000 for point in report.points)
+    assert all(point.predicted_rv_percent == 100.0 for point in report.points)

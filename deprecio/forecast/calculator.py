@@ -47,6 +47,10 @@ def generate_price_forecast(
 
     Использует адаптивную формулу затухающего экспоненциального падения:
     P(t) = P_plateau + (P_current - P_plateau) * (1 - decay_rate)^t
+
+    ``predicted_rv_percent`` is relative to ``current_price_rub``. If the
+    configured plateau exceeds the current price, it is capped at the current
+    price and the forecast remains flat rather than predicting appreciation.
     """
     if current_price_rub < 0:
         raise ValueError("Текущая цена не может быть отрицательной.")
@@ -56,10 +60,16 @@ def generate_price_forecast(
         raise ValueError("Горизонт прогноза должен быть не меньше одного месяца.")
 
     profile = device.forecast_profile or ForecastProfile()
+    if not 0 <= profile.brand_decay_monthly_rate < 1:
+        raise ValueError("Темп уценки должен находиться в диапазоне 0 <= rate < 1.")
+    if profile.historical_plateau_rv < 0:
+        raise ValueError("Остаточная стоимость на плато не может быть отрицательной.")
+    if profile.expected_sweet_spot_months <= 0:
+        raise ValueError("Срок выхода на плато должен быть положительным.")
     today = base_date or date.today()
 
     # Оценка плато (минимальной равновесной цены вторички для данного класса)
-    plateau_price = current_price_rub * profile.historical_plateau_rv
+    plateau_price = min(current_price_rub * profile.historical_plateau_rv, current_price_rub)
     decay_rate = profile.brand_decay_monthly_rate
 
     points: List[ForecastPoint] = []
@@ -67,7 +77,9 @@ def generate_price_forecast(
     # Расчет для каждого месяца от 1 до months_horizon
     for t in range(1, months_horizon + 1):
         # Экспоненциальное приближение к уровню плато
-        decay_factor = (1.0 - decay_rate) ** t
+        # pow() remains bounded in [0, 1] for the validated rate, including
+        # long horizons such as the API maximum of 120 months.
+        decay_factor = pow(1.0 - decay_rate, t)
         predicted = plateau_price + (current_price_rub - plateau_price) * decay_factor
 
         # Расчет целевой даты
