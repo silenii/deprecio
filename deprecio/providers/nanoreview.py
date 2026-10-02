@@ -1,6 +1,8 @@
 """Adapter schema and parser interface for Nanoreview and Kimovil smartphone specs."""
 
 from typing import Any, Dict, Optional
+import logging
+from pydantic import ValidationError
 from deprecio.models.device import (
     Currency,
     Device,
@@ -10,6 +12,8 @@ from deprecio.models.device import (
     MemoryVariant,
     RegionalEdition,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ExternalSpecsAdapter:
@@ -59,5 +63,6 @@ class ExternalSpecsAdapter:
                 lineage=DeviceLineage(series=series, tier=tier),
                 editions=[edition],
             )
-        except Exception:
+        except (TypeError, ValueError, ValidationError) as exc:
+            logger.warning("validation_error operation=nanoreview_parse model_id=%s error_type=%s", raw_data.get("slug", "unknown"), type(exc).__name__)
             return None

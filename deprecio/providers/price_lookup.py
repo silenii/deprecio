@@ -1,10 +1,13 @@
 """Lookup of Russian smartphone retail prices on Yandex.Market."""
 
 import json
+import logging
 from html.parser import HTMLParser
 from typing import Any, Optional
 import httpx
 from deprecio.core.analytics_defaults import default_parameters
+
+logger = logging.getLogger(__name__)
 
 
 class _NextDataParser(HTMLParser):
@@ -72,7 +75,17 @@ class MsrpLookup:
                 return None
             payload = json.loads(parser.data)
             return self._find_smartphone_price(payload)
-        except Exception:
+        except httpx.TimeoutException:
+            logger.warning("external_timeout operation=msrp_lookup model_id=%s", model_name)
+            return None
+        except httpx.HTTPError as exc:
+            logger.warning("external_http_error operation=msrp_lookup model_id=%s error_type=%s", model_name, type(exc).__name__)
+            return None
+        except json.JSONDecodeError:
+            logger.warning("parse_error operation=msrp_lookup model_id=%s format=json", model_name)
+            return None
+        except (TypeError, ValueError) as exc:
+            logger.warning("validation_error operation=msrp_lookup model_id=%s error_type=%s", model_name, type(exc).__name__)
             return None
 
     @classmethod

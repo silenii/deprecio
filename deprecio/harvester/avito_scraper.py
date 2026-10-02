@@ -89,8 +89,14 @@ class AvitoScraper:
                     listings.extend(
                         self._normalise_item(item) for item in items if isinstance(item, dict)
                     )
-        except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
-            logger.warning("Unable to fetch Avito listings: %s", exc)
+        except httpx.TimeoutException:
+            logger.warning("external_timeout operation=avito_listings model_id=%s", model_name)
+            return []
+        except httpx.HTTPError as exc:
+            logger.warning("external_http_error operation=avito_listings model_id=%s error_type=%s", model_name, type(exc).__name__)
+            return []
+        except (ValueError, TypeError, AttributeError) as exc:
+            logger.warning("parse_error operation=avito_listings model_id=%s error_type=%s", model_name, type(exc).__name__)
             return []
         return listings
 

@@ -2,8 +2,11 @@
 
 import json
 import asyncio
+import logging
 from pathlib import Path
 import sqlite3
+import httpx
+from pydantic import ValidationError
 from typing import Dict, List, Optional
 from deprecio.bot.config import BotConfig
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
@@ -12,6 +15,8 @@ from .base import BaseSpecsProvider
 from .exceptions import CatalogDataError, DeviceNotFoundError
 from .gsmarena_client import GSMArenaClient
 from .gsmarena_parser import GSMArenaParser
+
+logger = logging.getLogger(__name__)
 
 
 class CachedSpecsProvider(BaseSpecsProvider):
@@ -95,8 +100,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(device.model_dump(mode="json"), f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+        except (OSError, TypeError, ValueError) as exc:
+            logger.warning("cache_write_error operation=save_device model_id=%s error_type=%s", device.model_id, type(exc).__name__)
 
     def get_device(self, model_id: str) -> Device:
         dev = self._memory_cache.get(model_id)
@@ -190,7 +195,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
             for brand, name, raw_specs in rows:
                 try:
                     specs_dict = json.loads(raw_specs) if raw_specs else {}
-                except Exception:
+                except (TypeError, json.JSONDecodeError) as exc:
+                    logger.warning("parse_error operation=global_db_specs model_id=%s error_type=%s", name, type(exc).__name__)
                     specs_dict = {}
                 specs_dict["name"] = name
                 specs_dict["brand"] = brand
@@ -275,8 +281,10 @@ class CachedSpecsProvider(BaseSpecsProvider):
             if device:
                 self._save_to_disk_cache(device)
                 return device
-        except Exception:
-            pass
+        except (httpx.TimeoutException, httpx.HTTPError) as exc:
+            logger.warning("external_fetch_failed operation=fetch_device model_id=%s error_type=%s", query, type(exc).__name__)
+        except (TypeError, ValueError, ValidationError) as exc:
+            logger.warning("parse_or_validation_error operation=fetch_device model_id=%s error_type=%s", query, type(exc).__name__)
 
         return None
 
