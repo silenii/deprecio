@@ -26,8 +26,12 @@ def audit_catalog(catalog_path: Path, database_path: Path) -> dict[str, Any]:
         report["errors"].append("catalog: root must be a list")
         return report
 
-    ids = [item.get("model_id") for item in records if isinstance(item, dict)]
-    report["duplicates"] = sorted(k for k, v in Counter(ids).items() if k and v > 1)
+    ids = [
+        item["model_id"]
+        for item in records
+        if isinstance(item, dict) and isinstance(item.get("model_id"), str) and item["model_id"]
+    ]
+    report["duplicates"] = sorted(k for k, v in Counter(ids).items() if v > 1)
     for index, item in enumerate(records):
         prefix = f"record {index}"
         if not isinstance(item, dict):
@@ -48,6 +52,9 @@ def audit_catalog(catalog_path: Path, database_path: Path) -> dict[str, Any]:
             continue
         for edition_index, edition in enumerate(editions):
             ep = f"{prefix} edition {edition_index}"
+            if not isinstance(edition, dict):
+                report["errors"].append(f"{ep}: object expected")
+                continue
             if edition.get("edition_type") not in VALID_EDITIONS:
                 report["errors"].append(f"{ep}: invalid edition_type")
             release = edition.get("release_date")
@@ -56,8 +63,15 @@ def audit_catalog(catalog_path: Path, database_path: Path) -> dict[str, Any]:
                     date.fromisoformat(release)
                 except (TypeError, ValueError):
                     report["errors"].append(f"{ep}: invalid release_date {release!r}")
-            for variant_index, variant in enumerate(edition.get("memory_variants", [])):
+            variants = edition.get("memory_variants", [])
+            if not isinstance(variants, list):
+                report["errors"].append(f"{ep}: memory_variants must be a list")
+                continue
+            for variant_index, variant in enumerate(variants):
                 vp = f"{ep} variant {variant_index}"
+                if not isinstance(variant, dict):
+                    report["errors"].append(f"{vp}: object expected")
+                    continue
                 if variant.get("currency") not in VALID_CURRENCIES:
                     report["errors"].append(f"{vp}: invalid currency")
                 price = variant.get("msrp_local")
@@ -79,3 +93,4 @@ def audit_catalog(catalog_path: Path, database_path: Path) -> dict[str, Any]:
 
 def has_failures(report: dict[str, Any]) -> bool:
     return any(report[key] for key in ("errors", "duplicates", "incomplete", "database_mismatches"))
+
