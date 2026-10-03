@@ -35,5 +35,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Start Docker daemon
+        shell: bash
+        run: |
+          if docker info >/dev/null 2>&1; then
+            echo "Docker daemon is available"
+            echo "DOCKER_AVAILABLE=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "Docker daemon is unavailable on this runner; Docker build will be skipped."
+          echo "DOCKER_AVAILABLE=false" >> "$GITHUB_ENV"
       - name: Build runtime Docker image
+        if: env.DOCKER_AVAILABLE == 'true'
         run: docker build --target runtime -t deprecio:ci .
