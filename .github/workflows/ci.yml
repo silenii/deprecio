@@ -18,15 +18,22 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: python -m pytest tests/ -v --tb=short --cov=deprecio --cov-report=term-missing --cov-fail-under=70
 
       - name: Check syntax (compile all modules)
         run: |
-          python -m py_compile deprecio/bot/*.py deprecio/core/*.py deprecio/models/*.py deprecio/providers/*.py deprecio/harvester/*.py deprecio/cleaner/*.py deprecio/forecast/*.py
+          python -m compileall -q deprecio
           echo "Syntax OK"
 
       - name: Run ruff linter
-        run: ruff check deprecio/ --select E,F,W --ignore E501
+        run: python -m ruff check deprecio/
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build runtime Docker image
+        run: docker build --target runtime -t deprecio:ci .

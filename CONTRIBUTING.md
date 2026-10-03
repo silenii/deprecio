@@ -51,3 +51,16 @@ git push origin feature/название-задачи
 3. Обновить документацию, если изменилось поведение проекта.
 4. Отправить ветку в GitHub и GitVerse.
 5. Создать Pull Request в `main`, дождаться проверок и слить изменения.
+
+## Локальная проверка
+
+Перед Pull Request выполните из корня репозитория в PowerShell:
+
+```powershell
+.venv/Scripts/python.exe -m pip install -e ".[dev]"
+.venv/Scripts/python.exe -m pytest tests/ -v --cov=deprecio --cov-report=term-missing --cov-fail-under=70
+.venv/Scripts/python.exe -m ruff check deprecio/
+docker build --target runtime -t deprecio:local .
+```
+
+Последовательность должна пройти полностью; минимальный порог покрытия — 70%.

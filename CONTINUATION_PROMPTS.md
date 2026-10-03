@@ -171,7 +171,7 @@
 Синхронизируй изменения: git push origin main и git push gitverse main.
 
 
-Приоритет 10. CI, покрытие и документация
+Приоритет 10. CI, покрытие и документация — ✅ завершено 2026-10-04
 
 Укрепи CI в .github/workflows/, Makefile, README.md и CONTRIBUTING.md.
 1. Добавь проверку покрытия с минимальным порогом 70%.

@@ -6,6 +6,14 @@ from deprecio.api.dependencies import get_specs_provider
 from deprecio.api.main import app
 
 
+def test_fastapi_application_starts():
+    """The application imports and exposes its health endpoint."""
+    routes = {path for route in app.routes if (path := getattr(route, "path", None))}
+
+    assert app.title == "Deprecio API"
+    assert "/health" in routes
+
+
 class FakeProvider:
     def __init__(self, device):
         self.device = device

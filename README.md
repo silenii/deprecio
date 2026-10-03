@@ -89,7 +89,7 @@ python -m pip install -e ".[dev]"
 python -m deprecio.bot.main
 ```
 
-После установки доступна команда `deprecio`. Для разработки используются `pytest tests/ -v` и `ruff check deprecio/`.
+После установки доступна команда `deprecio`.
 
 ## Запуск через Docker
 
@@ -101,12 +101,18 @@ docker compose up --build
 
 `Dockerfile` собирает production-образ на Python 3.11, копирует пакет и `data/`, а контейнер запускает `python -m deprecio.bot.main`. Compose передаёт настройки из `.env` и сохраняет кэш в volume `deprecio-cache`.
 
-## Тесты и линтер
+## Единая локальная проверка
 
-```bash
-pytest tests/ -v
-ruff check deprecio/
+В PowerShell из корня репозитория выполните последовательность, совпадающую с CI:
+
+```powershell
+.venv/Scripts/python.exe -m pip install -e ".[dev]"
+.venv/Scripts/python.exe -m pytest tests/ -v --cov=deprecio --cov-report=term-missing --cov-fail-under=70
+.venv/Scripts/python.exe -m ruff check deprecio/
+docker build --target runtime -t deprecio:local .
 ```
+
+`make check` выполняет тесты с покрытием и Ruff, а `make docker-build` собирает runtime-образ. Makefile не содержит Unix-only команд и подходит для GNU Make в PowerShell.
 
 ## Синхронизация
 

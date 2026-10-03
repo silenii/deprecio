@@ -1,20 +1,21 @@
-.PHONY: install test test-cov lint bot clean
+.PHONY: install test test-cov lint check docker-build bot
 
 install:
-	pip install -e ".[dev]"
+	python -m pip install -e ".[dev]"
 
 test:
-	pytest tests/ -v
+	python -m pytest tests/ -v
 
 test-cov:
-	pytest tests/ --cov=deprecio --cov-report=term-missing
+	python -m pytest tests/ -v --cov=deprecio --cov-report=term-missing --cov-fail-under=70
 
 lint:
-	python -m py_compile deprecio/**/*.py && echo "Syntax OK"
+	python -m ruff check deprecio/
+
+check: test-cov lint
+
+docker-build:
+	docker build --target runtime -t deprecio:local .
 
 bot:
 	python -m deprecio.bot.main
-
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -name "*.pyc" -delete 2>/dev/null || true
