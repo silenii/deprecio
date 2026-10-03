@@ -16,7 +16,7 @@ Provider = Annotated[BaseSpecsProvider, Depends(get_specs_provider)]
 
 @router.get("/search", response_model=list[Device])
 def search_devices(
-    query: Annotated[str, Query(min_length=1)],
+    query: Annotated[str, Query(min_length=1, max_length=100)],
     provider: Provider,
 ) -> list[Device]:
     """Search the catalog using the provider and shared fuzzy matching logic."""

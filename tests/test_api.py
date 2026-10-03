@@ -76,3 +76,62 @@ def test_default_provider_returns_404_for_unknown_device_without_override():
     response = TestClient(app).get("/api/v1/devices/not-in-catalog")
 
     assert response.status_code == 404
+    assert response.json() == {"code": "not_found", "message": "Device not found"}
+
+
+def test_health_check():
+    response = TestClient(app).get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_empty_search_is_rejected():
+    response = TestClient(app).get("/api/v1/devices/search", params={"query": ""})
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "validation_error"
+
+
+def test_search_query_length_is_limited():
+    response = TestClient(app).get("/api/v1/devices/search", params={"query": "x" * 101})
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "validation_error"
+
+
+def test_forecast_negative_price_returns_bad_request(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get(
+            "/api/v1/forecast/xiaomi-14", params={"current_price_rub": -1}
+        )
+        assert response.status_code == 400
+        assert response.json()["code"] == "http_error"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_forecast_too_large_horizon_returns_bad_request(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get(
+            "/api/v1/forecast/xiaomi-14",
+            params={"current_price_rub": 70000, "months_horizon": 121},
+        )
+        assert response.status_code == 400
+        assert response.json()["code"] == "http_error"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_unknown_forecast_device_returns_not_found(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get(
+            "/api/v1/forecast/missing", params={"current_price_rub": 70000}
+        )
+        assert response.status_code == 404
+        assert response.json() == {"code": "not_found", "message": "Device not found"}
+    finally:
+        app.dependency_overrides.clear()
