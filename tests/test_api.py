@@ -82,8 +82,12 @@ def test_default_provider_returns_404_for_unknown_device_without_override():
 def test_health_check():
     response = TestClient(app).get("/health")
 
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.status_code in (200, 207)
+    data = response.json()
+    assert "status" in data
+    assert data["status"] in ("ok", "degraded")
+    assert "checks" in data
+    assert "cache_write" in data["checks"]
 
 
 def test_empty_search_is_rejected():
