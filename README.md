@@ -54,6 +54,8 @@ API по умолчанию использует `CachedSpecsProvider`: он ч�
 
 Скрипты `scripts/build_global_db.py` и `scripts/patch_db.py` предназначены для сборки и обновления SQLite-базы. Бинарную базу не следует редактировать вручную.
 
+Проверка каталога выполняется командой `deprecio catalog-diagnose --json`; при любой ошибке она завершается с кодом `1`. Воспроизводимая пересборка из источника выполняется командой `python scripts/build_global_db.py --catalog data/catalog.json --output data/global_devices.db`. Скрипт создаёт временную базу, перестраивает индексы и атомарно заменяет `data/global_devices.db`.
+
 ## Запуск через Poetry
 
 Требуется Python 3.11 или новее и Poetry.
