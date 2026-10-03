@@ -1,6 +1,7 @@
 """Handlers for Smartphone Search, Card Display, and Sweet Spot Analysis."""
 
 import asyncio
+import logging
 from datetime import date
 from typing import Optional
 from aiogram import F, Router
@@ -13,8 +14,10 @@ from deprecio.core import analyze_sweet_spot, calculate_residual_value, compare_
 from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
 from deprecio.core.analytics_defaults import device_msrp_rub
+from .safety import get_user_query, log_user_action
 
 router = Router(name="device_router")
+logger = logging.getLogger(__name__)
 
 
 class SearchStates(StatesGroup):
@@ -319,23 +322,27 @@ async def handle_show_device_callback(callback: CallbackQuery, catalog: CachedSp
 
 @router.message(SearchStates.waiting_for_query)
 async def handle_device_search(message: Message, state: FSMContext, catalog: CachedSpecsProvider) -> None:
+    query = get_user_query(message.text)
     await state.clear()
-    if not message.text or message.text.startswith("/"):
+    if not query:
+        await message.answer("Введите название модели текстом (до 100 символов).")
         return
+    log_user_action("device_search", query)
 
     # Индикатор поиска
-    status_msg = await message.answer(f"🔍 Ищу *'{message.text}'* в каталоге Deprecio...", parse_mode="Markdown")
+    status_msg = await message.answer(f"🔍 Ищу *'{query}'* в каталоге Deprecio...", parse_mode="Markdown")
 
-    matches = catalog.search_devices(message.text)
-    if not matches:
-        # Пробуем запросить из внешнего источника
-        target = await catalog.get_or_fetch_device(message.text)
-    else:
-        target = matches[0]
+    try:
+        matches = catalog.search_devices(query)
+        target = matches[0] if matches else await catalog.get_or_fetch_device(query)
+    except Exception as exc:
+        logger.warning("bot_provider_failed operation=device_search error_type=%s", type(exc).__name__)
+        await status_msg.edit_text("Не удалось получить данные сейчас. Попробуйте позже.")
+        return
 
     if not target:
         await status_msg.edit_text(
-            f"🔍 По запросу *'{message.text}'* ничего не найдено.\n\n"
+            f"🔍 По запросу *'{query}'* ничего не найдено.\n\n"
             "Попробуйте написать, например: `Nothing 2a`, `Galaxy S24`, `Pixel 8`, `Xiaomi 14` или `Айфон 15`.",
             parse_mode="Markdown",
         )
@@ -347,9 +354,9 @@ async def handle_device_search(message: Message, state: FSMContext, catalog: Cac
 
     # Проверка на точное совпадение (если пользователь искал poco x6, а нашли poco x6 pro)
     from deprecio.core.fuzzy_search import normalize_search_text, calculate_match_score
-    score = calculate_match_score(message.text, target.name, target.brand)
+    score = calculate_match_score(query, target.name, target.brand)
     # Если совпадение неточное (не все слова из запроса входят в имя или нет точного номера)
-    q_norm = normalize_search_text(message.text)
+    q_norm = normalize_search_text(query)
     t_norm = normalize_search_text(target.name)
     if score < 0.90 or (q_norm not in t_norm and q_norm != t_norm):
         warning = "⚠️ *Точное совпадение не найдено, показываем ближайший вариант:*\n\n"

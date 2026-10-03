@@ -10,6 +10,7 @@ from deprecio.core import analyze_sweet_spot, calculate_residual_value
 from deprecio.providers import CachedSpecsProvider
 from deprecio.harvester import MarketAggregator
 from deprecio.core.analytics_defaults import device_msrp_rub
+from .safety import get_user_query, log_user_action
 
 router = Router(name="compare_router")
 
@@ -82,16 +83,19 @@ async def _comparison(first, second, catalog: CachedSpecsProvider, market_aggreg
 
 @router.message(Command("compare"))
 async def start_compare(message: Message, state: FSMContext) -> None:
+    await state.clear()
     await state.set_state(CompareStates.waiting_first)
     await message.answer("Введите первую модель:")
 
 
 @router.message(CompareStates.waiting_first)
 async def receive_first(message: Message, state: FSMContext) -> None:
-    if not message.text or message.text.startswith("/"):
+    query = get_user_query(message.text)
+    if not query:
         await message.answer("Введите название первой модели текстом:")
         return
-    await state.update_data(first_query=message.text.strip())
+    log_user_action("compare_first", query)
+    await state.update_data(first_query=query)
     await state.set_state(CompareStates.waiting_second)
     await message.answer("Теперь введите вторую модель:")
 
@@ -99,13 +103,23 @@ async def receive_first(message: Message, state: FSMContext) -> None:
 @router.message(CompareStates.waiting_second)
 async def receive_second(message: Message, state: FSMContext, catalog: CachedSpecsProvider,
                          market_aggregator: MarketAggregator) -> None:
-    if not message.text or message.text.startswith("/"):
+    query = get_user_query(message.text)
+    if not query:
         await message.answer("Введите название второй модели текстом:")
         return
     data = await state.get_data()
     await state.clear()
-    first = await _find_device(data["first_query"], catalog)
-    second = await _find_device(message.text.strip(), catalog)
+    first_query = data.get("first_query")
+    if not first_query:
+        await message.answer("Сценарий сравнения устарел. Запустите его через /compare.")
+        return
+    log_user_action("compare_second", query)
+    try:
+        first = await _find_device(first_query, catalog)
+        second = await _find_device(query, catalog)
+    except Exception:
+        await message.answer("Не удалось получить данные сейчас. Попробуйте позже.")
+        return
     if not first or not second:
         await message.answer("Не удалось найти одну из моделей. Попробуйте ещё раз через /compare.")
         return

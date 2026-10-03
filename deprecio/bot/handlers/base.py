@@ -5,6 +5,7 @@ from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from deprecio.bot.keyboards import get_back_keyboard, get_main_menu_keyboard
+from .safety import log_user_action
 
 router = Router(name="base_router")
 
@@ -12,6 +13,7 @@ router = Router(name="base_router")
 @router.message(CommandStart())
 async def handle_start(message: Message, state: FSMContext) -> None:
     await state.clear()
+    log_user_action("start")
     text = (
         "👋 **Добро пожаловать в Deprecio!**\n\n"
         "Я аналитический бот по вторичному рынку смартфонов.\n"
@@ -28,12 +30,14 @@ async def handle_start(message: Message, state: FSMContext) -> None:
 @router.message(StateFilter("*"), Command("cancel"))
 async def handle_cancel(message: Message, state: FSMContext) -> None:
     await state.clear()
+    log_user_action("cancel")
     await message.answer("Текущая операция отменена.", reply_markup=get_main_menu_keyboard())
 
 
 @router.message(StateFilter("*"), F.text == "❌ Отмена")
 async def handle_cancel_button(message: Message, state: FSMContext) -> None:
     await state.clear()
+    log_user_action("cancel_button")
     await message.answer("Текущая операция отменена.", reply_markup=get_main_menu_keyboard())
 
 
