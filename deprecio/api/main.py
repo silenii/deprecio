@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from deprecio.api.routes.devices import router as devices_router
 from deprecio.api.routes.forecast import router as forecast_router
 from deprecio.api.routes.price_history import router as price_history_router
+from deprecio.api.routes.recommendations import router as recommendations_router
 from deprecio.logging_config import setup_logging
 
 setup_logging()
@@ -20,6 +21,7 @@ app = FastAPI(title="Deprecio API", version="1.0.0")
 app.include_router(price_history_router, prefix="/api/v1")
 app.include_router(devices_router, prefix="/api/v1")
 app.include_router(forecast_router, prefix="/api/v1")
+app.include_router(recommendations_router, prefix="/api/v1")
 
 
 @app.exception_handler(HTTPException)
