@@ -2,11 +2,14 @@
 
 import statistics
 from datetime import date
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from deprecio.cleaner import ListingSanitizer
 from deprecio.models.device import Device, EditionType
 from deprecio.models.listing import ItemCondition, SecondaryListing
 from .models import EditionMarketStats, MarketStats
+from deprecio.price_history.models import PriceHistoryPoint
+from deprecio.price_history.repository import PriceHistoryRepository
 
 
 class MarketAggregator:
@@ -124,3 +127,14 @@ class MarketAggregator:
             condition_medians=condition_medians,
             updated_at=date.today(),
         )
+
+    @classmethod
+    def persist_market_data(
+        cls, stats: MarketStats, source: str, repository: PriceHistoryRepository,
+        timestamp: datetime | None = None,
+    ) -> PriceHistoryPoint:
+        point = PriceHistoryPoint.from_market_stats(
+            stats, source, timestamp or datetime.now(timezone.utc)
+        )
+        repository.save(point)
+        return point
