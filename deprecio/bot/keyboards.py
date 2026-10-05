@@ -11,6 +11,7 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🔍 Найти смартфон"),
             KeyboardButton(text="🟢 Зона Sweet Spot"),
             KeyboardButton(text="🆕 Новинки"),
+            KeyboardButton(text="⭐ Избранное"),
         ],
         [
             KeyboardButton(text="⚖️ Версии CN vs EAC"),
@@ -27,9 +28,11 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
 def get_device_card_keyboard(
     model_id: str,
     alternative_matches: Optional[List[Tuple[str, str]]] = None,
+    is_favorite: bool = False,
 ) -> InlineKeyboardMarkup:
     """Инлайн-кнопки под карточкой смартфона с опцией выбора других совпадений."""
     buttons = [
+        [InlineKeyboardButton(text="⭐ Удалить из избранного" if is_favorite else "☆ Добавить в избранное", callback_data=f"favorite:{'remove' if is_favorite else 'add'}:{model_id}")],
         [
             InlineKeyboardButton(text="🔮 Прогноз уценки", callback_data=f"forecast:{model_id}"),
             InlineKeyboardButton(text="💡 Найти аналоги", callback_data=f"analogs:{model_id}"),

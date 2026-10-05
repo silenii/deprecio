@@ -13,6 +13,7 @@ from deprecio.bot.keyboards import get_back_keyboard, get_device_card_keyboard
 from deprecio.core import analyze_sweet_spot, calculate_residual_value, compare_generations
 from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
+from deprecio.favorites import SQLiteFavoritesRepository
 from deprecio.core.analytics_defaults import device_msrp_rub
 from .safety import get_user_query, log_user_action
 
@@ -304,7 +305,7 @@ async def handle_gen_compare(callback: CallbackQuery, catalog: CachedSpecsProvid
 
 
 @router.callback_query(F.data.startswith("show_dev:"))
-async def handle_show_device_callback(callback: CallbackQuery, catalog: CachedSpecsProvider) -> None:
+async def handle_show_device_callback(callback: CallbackQuery, catalog: CachedSpecsProvider, favorites: SQLiteFavoritesRepository | None = None) -> None:
     model_id = callback.data.split(":")[1]
     dev = catalog.get_device(model_id)
     if not dev:
@@ -314,14 +315,14 @@ async def handle_show_device_callback(callback: CallbackQuery, catalog: CachedSp
     card_text = await format_device_card(dev, catalog)
     await callback.message.edit_text(
         card_text,
-        reply_markup=get_device_card_keyboard(dev.model_id),
+        reply_markup=get_device_card_keyboard(dev.model_id, is_favorite=favorites.contains(callback.from_user.id, dev.model_id) if favorites else False),
         parse_mode="Markdown",
     )
     await callback.answer()
 
 
 @router.message(SearchStates.waiting_for_query)
-async def handle_device_search(message: Message, state: FSMContext, catalog: CachedSpecsProvider) -> None:
+async def handle_device_search(message: Message, state: FSMContext, catalog: CachedSpecsProvider, favorites: SQLiteFavoritesRepository | None = None) -> None:
     query = get_user_query(message.text)
     await state.clear()
     if not query:
@@ -365,6 +366,6 @@ async def handle_device_search(message: Message, state: FSMContext, catalog: Cac
     await status_msg.delete()
     await message.answer(
         card_text,
-        reply_markup=get_device_card_keyboard(target.model_id, alternative_matches=alternatives),
+        reply_markup=get_device_card_keyboard(target.model_id, alternative_matches=alternatives, is_favorite=favorites.contains(message.from_user.id, target.model_id) if favorites else False),
         parse_mode="Markdown",
     )
