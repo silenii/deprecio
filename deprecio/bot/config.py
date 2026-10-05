@@ -81,7 +81,6 @@ class LogSettings(BaseSettings):
     log_level: str = Field("INFO", validation_alias="LOG_LEVEL")
     log_format: str = Field("plain", validation_alias="LOG_FORMAT")
     log_file: str = Field("", validation_alias="LOG_FILE")
-
     @field_validator("log_level", mode="after")
     @classmethod
     def _validate_level(cls, v: str) -> str:
@@ -133,6 +132,8 @@ class AppSettings(BaseSettings):
     log_level: str = Field("INFO", validation_alias="LOG_LEVEL")
     log_format: str = Field("plain", validation_alias="LOG_FORMAT")
     log_file: str = Field("", validation_alias="LOG_FILE")
+    price_alert_check_interval_sec: int = Field(3600, validation_alias="PRICE_ALERT_CHECK_INTERVAL_SEC", gt=0)
+    price_alert_max_per_user: int = Field(20, validation_alias="PRICE_ALERT_MAX_PER_USER", gt=0)
 
     @classmethod
     def from_env(cls) -> "AppSettings":

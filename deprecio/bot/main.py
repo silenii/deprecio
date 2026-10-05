@@ -19,6 +19,7 @@ from deprecio.bot.handlers import (
     inline_router,
     new_releases_router,
     favorites_router,
+    price_alerts_router,
 )
 from deprecio.logging_config import setup_logging
 
@@ -45,10 +46,11 @@ async def run_bot() -> None:
     )
     dp = Dispatcher(storage=MemoryStorage())
 
-    catalog, market_aggregator, favorites = build_dependencies()
+    catalog, market_aggregator, favorites, price_alerts = build_dependencies()
     dp["catalog"] = catalog
     dp["market_aggregator"] = market_aggregator
     dp["favorites"] = favorites
+    dp["price_alerts"] = price_alerts
 
     @dp.error()
     async def handle_bot_error(event: ErrorEvent) -> bool:
@@ -68,6 +70,7 @@ async def run_bot() -> None:
     dp.include_router(device_router)
     dp.include_router(new_releases_router)
     dp.include_router(favorites_router)
+    dp.include_router(price_alerts_router)
     dp.include_router(inline_router)
 
     logger.info("bot_started")

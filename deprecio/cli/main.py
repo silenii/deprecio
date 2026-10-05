@@ -1,9 +1,12 @@
 """Deprecio command-line entry point."""
 
 import json
+import asyncio
 from pathlib import Path
 
 import typer
+from deprecio.price_alerts import PriceAlertService, SQLitePriceAlertRepository
+from deprecio.providers import CachedSpecsProvider
 
 from deprecio.catalog_audit import audit_catalog, has_failures
 
@@ -34,6 +37,14 @@ def catalog_diagnose(
                 typer.echo(f"{category}: {item}")
     if has_failures(report):
         raise typer.Exit(code=1)
+
+
+@app.command("price-alerts-check")
+def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"))) -> None:
+    """Check active price subscriptions once and print notification events."""
+    service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
+    for event in asyncio.run(service.check()):
+        typer.echo(f"{event.user_id} {event.model_id} {event.current_price_rub:g} руб.")
 
 
 if __name__ == "__main__":
