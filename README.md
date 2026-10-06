@@ -41,6 +41,28 @@ deprecio/
 
 API по умолчанию использует `CachedSpecsProvider`: он читает основной каталог из `data/catalog.json` и при необходимости ищет дополнительные устройства в `data/global_devices.db`. Тесты и интеграции могут заменить его через FastAPI `app.dependency_overrides`.
 
+### API аналитики
+
+| Метод и маршрут | Назначение |
+|---|---|
+| `GET /api/v1/analytics/compare?model_ids=...` | Сравнение 2-5 устройств: нормализованные характеристики, MSRP, текущая цена, RV, depreciation drop, forecast summary и market stats. |
+| `GET /api/v1/analytics/analogs/{model_id}` | Подбор аналогов с параметрами `tier`, `budget_min_rub`, `budget_max_rub`, `limit`. |
+| `GET /api/v1/analytics/devices/{model_id}/market` | Рыночная карточка с медианой, диапазонами, количеством объявлений и датой обновления. |
+
+Ошибки используют стабильный формат `{"code": "...", "message": "...", "details": null}`. Коды: `not_found`, `http_error`, `validation_error`.
+
+```bash
+curl "http://localhost:8000/api/v1/analytics/compare?model_ids=xiaomi-14&model_ids=xiaomi-14"
+curl "http://localhost:8000/api/v1/analytics/analogs/xiaomi-14?tier=Flagship&budget_max_rub=100000&limit=5"
+curl "http://localhost:8000/api/v1/analytics/devices/xiaomi-14/market"
+```
+
+```powershell
+Invoke-RestMethod "http://localhost:8000/api/v1/analytics/compare?model_ids=xiaomi-14&model_ids=xiaomi-14"
+Invoke-RestMethod "http://localhost:8000/api/v1/analytics/analogs/xiaomi-14?tier=Flagship&budget_max_rub=100000&limit=5"
+Invoke-RestMethod "http://localhost:8000/api/v1/analytics/devices/xiaomi-14/market"
+```
+
 Стек: Python 3.11+, Pydantic, FastAPI, aiogram, pytest, Ruff и Docker.
 
 ## Структура `data/`

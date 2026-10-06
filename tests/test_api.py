@@ -147,3 +147,54 @@ def test_unknown_forecast_device_returns_not_found(sample_device):
         assert response.json() == {"code": "not_found", "message": "Device not found"}
     finally:
         app.dependency_overrides.clear()
+
+
+def test_compare_endpoint_returns_normalized_analytics(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get(
+            "/api/v1/analytics/compare", params=[("model_ids", "xiaomi-14"), ("model_ids", "xiaomi-14")]
+        )
+        assert response.status_code == 200
+        assert response.json()["devices"][0]["msrp_rub"] == 89990
+        assert response.json()["devices"][0]["current_price_rub"] is None
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_analytics_unknown_model_returns_not_found(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get(
+            "/api/v1/analytics/compare", params=[("model_ids", "missing"), ("model_ids", "xiaomi-14")]
+        )
+        assert response.status_code == 404
+        assert response.json() == {"code": "not_found", "message": "Device not found"}
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_compare_endpoint_rejects_too_many_models():
+    response = TestClient(app).get(
+        "/api/v1/analytics/compare", params=[("model_ids", str(index)) for index in range(6)]
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "validation_error"
+
+
+def test_market_card_returns_empty_market_data(sample_device):
+    app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
+    try:
+        response = TestClient(app).get("/api/v1/analytics/devices/xiaomi-14/market")
+        assert response.status_code == 200
+        assert response.json()["market_stats"] == {
+            "median_price_rub": None,
+            "min_price_rub": None,
+            "p25_price_rub": None,
+            "p75_price_rub": None,
+            "max_price_rub": None,
+            "listings_count": 0,
+            "updated_at": None,
+        }
+    finally:
+        app.dependency_overrides.clear()
