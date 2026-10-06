@@ -14,6 +14,18 @@ def test_fastapi_application_starts():
     assert "/health" in routes
 
 
+def test_analytics_client_is_served():
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert "Deprecio Analytics" in response.text
+
+
+def test_analytics_client_assets_are_served():
+    client = TestClient(app)
+    assert client.get("/frontend/app.js").status_code == 200
+    assert client.get("/frontend/styles.css").status_code == 200
+
+
 class FakeProvider:
     def __init__(self, device):
         self.device = device

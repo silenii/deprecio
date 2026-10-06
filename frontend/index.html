@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Аналитика остаточной стоимости смартфонов">
+  <title>Deprecio Analytics</title>
+  <link rel="stylesheet" href="/frontend/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Deprecio <span>ANALYTICS</span></a>
+    <span class="api-status" id="api-status" aria-live="polite">API: проверка</span>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">РЫНОК УСТРОЙСТВ</p>
+      <h1>Аналитика цены<br>без догадок</h1>
+      <p>Ищите модель, изучайте прогноз снижения стоимости и сравнивайте устройства на основе данных API.</p>
+      <form id="search-form" class="search" role="search">
+        <label class="sr-only" for="search-input">Поиск устройства</label>
+        <input id="search-input" name="q" autocomplete="off" placeholder="Например, GPT 6 Luna 14" required>
+        <button type="submit">Найти</button>
+      </form>
+    </section>
+
+    <section id="search-section" class="results-section" aria-labelledby="results-title">
+      <div class="section-heading"><div><p class="eyebrow">КАТАЛОГ</p><h2 id="results-title">Результаты поиска</h2></div><span id="result-count"></span></div>
+      <div id="search-message" class="message" role="status">Введите модель, чтобы начать поиск.</div>
+      <div id="results" class="result-grid"></div>
+    </section>
+
+    <section id="device-section" class="device-section" hidden aria-labelledby="device-title">
+      <div class="section-heading"><div><p class="eyebrow">ПРОФИЛЬ УСТРОЙСТВА</p><h2 id="device-title">Устройство</h2></div><button id="share-button" class="secondary" type="button">Скопировать ссылку</button></div>
+      <div id="device-error" class="message error" hidden></div>
+      <div id="device-content"></div>
+    </section>
+  </main>
+  <script src="/frontend/app.js" defer></script>
+</body>
+</html>

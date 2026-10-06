@@ -6,7 +6,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from deprecio.api.routes.devices import router as devices_router
 from deprecio.api.routes.analytics import router as analytics_router
@@ -24,6 +25,15 @@ app.include_router(devices_router, prefix="/api/v1")
 app.include_router(forecast_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
+
+FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
+app.mount("/frontend", StaticFiles(directory=FRONTEND_ROOT), name="frontend")
+
+
+@app.get("/", include_in_schema=False)
+def analytics_client() -> FileResponse:
+    """Serve the dependency-free analytics client."""
+    return FileResponse(FRONTEND_ROOT / "index.html")
 
 
 @app.exception_handler(HTTPException)
