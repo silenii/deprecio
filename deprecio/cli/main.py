@@ -11,6 +11,7 @@ from deprecio.providers import CachedSpecsProvider
 from deprecio.catalog_audit import audit_catalog, has_failures
 from deprecio.api.routes.analytics import _device_response
 from deprecio.reports import ReportService
+from deprecio.catalog_import import import_catalog
 
 
 app = typer.Typer(help="Deprecio smartphone depreciation analytics.")
@@ -39,6 +40,35 @@ def catalog_diagnose(
                 typer.echo(f"{category}: {item}")
     if has_failures(report):
         raise typer.Exit(code=1)
+
+
+def _catalog_import_command(input_path: Path, catalog: Path, database: Path, report: Path, dry_run: bool) -> None:
+    result = import_catalog(input_path, catalog, report, database, dry_run=dry_run)
+    typer.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    if result["status"] != "ok":
+        raise typer.Exit(code=2)
+
+
+@app.command("catalog-import-preview")
+def catalog_import_preview(
+    input_path: Path = typer.Argument(..., exists=True),
+    catalog: Path = typer.Option(Path("data/catalog.json")),
+    report: Path = typer.Option(Path("data/catalog-import-preview.json")),
+) -> None:
+    """Validate and preview an import without changing catalog or database."""
+    _catalog_import_command(input_path, catalog, Path("data/global_devices.db"), report, True)
+
+
+@app.command("catalog-import")
+def catalog_import(
+    input_path: Path = typer.Argument(..., exists=True),
+    catalog: Path = typer.Option(Path("data/catalog.json")),
+    database: Path = typer.Option(Path("data/global_devices.db")),
+    report: Path = typer.Option(Path("data/catalog-import-report.json")),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Import validated devices and rebuild the database atomically."""
+    _catalog_import_command(input_path, catalog, database, report, dry_run)
 
 
 @app.command("price-alerts-check")

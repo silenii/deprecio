@@ -97,7 +97,6 @@ def build_global_db(dest_path: Path) -> None:
         for item in modern_items:
             model_name = item.get("model", "").strip()
             brand_name = normalize_brand(item.get("brand_name", ""))
-            
             if not model_name or model_name.lower() in seen_names:
                 continue
 
@@ -174,9 +173,7 @@ def build_global_db(dest_path: Path) -> None:
     conn.commit()
     conn.close()
 
-    if dest_path.exists():
-        dest_path.unlink()
-    tmp_path.rename(dest_path)
+    os.replace(tmp_path, dest_path)
 
     size_mb = os.path.getsize(dest_path) / (1024 * 1024)
     print(f"[+] База успешно создана за {time.time() - t0:.2f} сек. Записей: {len(rows)}, Размер: {size_mb:.2f} МБ")
@@ -197,16 +194,18 @@ def build_catalog_db(catalog_path: Path, dest_path: Path) -> None:
     tmp_path = dest_path.with_suffix(".tmp.db")
     if tmp_path.exists():
         tmp_path.unlink()
-    with sqlite3.connect(tmp_path) as conn:
+    conn = sqlite3.connect(tmp_path)
+    try:
         conn.execute("CREATE TABLE phones (id TEXT PRIMARY KEY, brand TEXT, name TEXT, clean_name TEXT, released_at TEXT, chipset TEXT, raw_specs TEXT)")
         conn.execute("CREATE INDEX idx_phones_clean_name ON phones(clean_name)")
         conn.execute("CREATE INDEX idx_phones_brand ON phones(brand)")
         conn.executemany("INSERT INTO phones VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
         conn.execute("CREATE VIRTUAL TABLE phones_fts USING fts5(id UNINDEXED, brand, name, clean_name, content=phones, content_rowid=rowid)")
         conn.execute("INSERT INTO phones_fts(phones_fts) VALUES('rebuild')")
-    if dest_path.exists():
-        dest_path.unlink()
-    tmp_path.rename(dest_path)
+        conn.commit()
+    finally:
+        conn.close()
+    os.replace(tmp_path, dest_path)
     print(f"[+] Каталог собран из {catalog_path}: {len(rows)} записей в {dest_path}")
 
 
