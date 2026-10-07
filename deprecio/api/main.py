@@ -14,6 +14,7 @@ from deprecio.api.routes.analytics import router as analytics_router
 from deprecio.api.routes.forecast import router as forecast_router
 from deprecio.api.routes.price_history import router as price_history_router
 from deprecio.api.routes.recommendations import router as recommendations_router
+from deprecio.api.routes.reports import router as reports_router
 from deprecio.logging_config import setup_logging
 
 setup_logging()
@@ -25,6 +26,7 @@ app.include_router(devices_router, prefix="/api/v1")
 app.include_router(forecast_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
 
 FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
 app.mount("/frontend", StaticFiles(directory=FRONTEND_ROOT), name="frontend")

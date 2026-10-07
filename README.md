@@ -49,6 +49,8 @@ API по умолчанию использует `CachedSpecsProvider`: он ч�
 | `GET /api/v1/analytics/compare?model_ids=...` | Сравнение 2-5 устройств: нормализованные характеристики, MSRP, текущая цена, RV, depreciation drop, forecast summary и market stats. |
 | `GET /api/v1/analytics/analogs/{model_id}` | Подбор аналогов с параметрами `tier`, `budget_min_rub`, `budget_max_rub`, `limit`. |
 | `GET /api/v1/analytics/devices/{model_id}/market` | Рыночная карточка с медианой, диапазонами, количеством объявлений и датой обновления. |
+| `GET /api/v1/reports/{model_id}?format=json` | Скачать карточку устройства в `json`, `csv`, `html` или `md`. |
+| `GET /api/v1/reports/compare/download?model_ids=...&format=csv` | Скачать сравнение 2-5 устройств. |
 
 Ошибки используют стабильный формат `{"code": "...", "message": "...", "details": null}`. Коды: `not_found`, `http_error`, `validation_error`.
 
@@ -62,6 +64,16 @@ curl "http://localhost:8000/api/v1/analytics/devices/xiaomi-14/market"
 Invoke-RestMethod "http://localhost:8000/api/v1/analytics/compare?model_ids=xiaomi-14&model_ids=xiaomi-14"
 Invoke-RestMethod "http://localhost:8000/api/v1/analytics/analogs/xiaomi-14?tier=Flagship&budget_max_rub=100000&limit=5"
 Invoke-RestMethod "http://localhost:8000/api/v1/analytics/devices/xiaomi-14/market"
+```
+
+Отчёты содержат только публичные рассчитанные поля, версию формата и UTC-время
+формирования. Примеры скачивания:
+
+```bash
+curl -OJ "http://localhost:8000/api/v1/reports/xiaomi-14?format=json"
+curl -OJ "http://localhost:8000/api/v1/reports/compare/download?model_ids=xiaomi-14&model_ids=oneplus-12&format=html"
+deprecio report-export --model-id xiaomi-14 --format csv --output report.csv
+deprecio report-export --model-id xiaomi-14 --model-id oneplus-12 --format md
 ```
 
 Стек: Python 3.11+, Pydantic, FastAPI, aiogram, pytest, Ruff и Docker.

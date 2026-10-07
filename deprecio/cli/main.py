@@ -9,6 +9,8 @@ from deprecio.price_alerts import PriceAlertService, SQLitePriceAlertRepository
 from deprecio.providers import CachedSpecsProvider
 
 from deprecio.catalog_audit import audit_catalog, has_failures
+from deprecio.api.routes.analytics import _device_response
+from deprecio.reports import ReportService
 
 
 app = typer.Typer(help="Deprecio smartphone depreciation analytics.")
@@ -45,6 +47,22 @@ def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"
     service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
     for event in asyncio.run(service.check()):
         typer.echo(f"{event.user_id} {event.model_id} {event.current_price_rub:g} руб.")
+
+
+@app.command("report-export")
+def report_export(
+    model_id: list[str] = typer.Option(..., "--model-id", min=1, max=5),
+    format: str = typer.Option("json", "--format"),
+    output: Path | None = typer.Option(None, "--output"),
+) -> None:
+    """Export a device card or comparison using local catalog data."""
+    provider = CachedSpecsProvider()
+    devices = [asyncio.run(_device_response(provider, provider.get_device(item))) for item in model_id]
+    content, _media_type = ReportService().render(devices, format)
+    if output:
+        output.write_bytes(content)
+    else:
+        typer.echo(content.decode("utf-8-sig"))
 
 
 if __name__ == "__main__":
