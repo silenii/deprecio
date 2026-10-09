@@ -2,8 +2,11 @@
 
 import json
 import asyncio
+import logging
+import os
 from pathlib import Path
 
+import httpx
 import typer
 from deprecio.price_alerts import PriceAlertService, SQLitePriceAlertRepository
 from deprecio.providers import CachedSpecsProvider
@@ -17,6 +20,7 @@ from deprecio.price_history.repository import SQLitePriceHistoryRepository
 
 
 app = typer.Typer(help="Deprecio smartphone depreciation analytics.")
+logger = logging.getLogger(__name__)
 
 
 @app.callback()
@@ -73,12 +77,57 @@ def catalog_import(
     _catalog_import_command(input_path, catalog, database, report, dry_run)
 
 
-@app.command("price-alerts-check")
-def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"))) -> None:
-    """Check active price subscriptions once and print notification events."""
+async def _send_telegram_event(token: str, event) -> None:
+    """Send one alert to the Telegram chat identified by the alert owner."""
+    message = (f"Цена {event.model_id}: {event.current_price_rub:g} руб. "
+               f"(цель {event.target_price_rub:g} руб.)")
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": event.user_id, "text": message},
+        )
+        response.raise_for_status()
+
+
+async def _check_alerts(database: Path, dry_run: bool, timeout: float) -> None:
     service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
-    for event in asyncio.run(service.check()):
-        typer.echo(f"{event.user_id} {event.model_id} {event.current_price_rub:g} руб.")
+    events = await asyncio.wait_for(service.check(), timeout=timeout)
+    token = os.getenv("DEPRECIO_BOT_TOKEN", "").strip()
+    for event in events:
+        payload = {
+            "event": "price_alert_triggered",
+            "user_id": event.user_id,
+            "model_id": event.model_id,
+            "current_price_rub": event.current_price_rub,
+            "target_price_rub": event.target_price_rub,
+            "dry_run": dry_run,
+        }
+        typer.echo(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        if token and not dry_run:
+            await asyncio.wait_for(_send_telegram_event(token, event), timeout=timeout)
+
+
+@app.command("check-alerts")
+def check_alerts(
+    database: Path = typer.Option(Path("data/price_alerts.db")),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Check price alerts once, optionally notifying Telegram."""
+    try:
+        timeout = float(os.getenv("DEPRECIO_ALERT_CHECK_TIMEOUT_SEC", "60"))
+        if timeout <= 0:
+            raise ValueError("DEPRECIO_ALERT_CHECK_TIMEOUT_SEC must be positive")
+        asyncio.run(_check_alerts(database, dry_run, timeout))
+    except Exception as exc:
+        logger.exception("price_alert_check_failed")
+        typer.echo(json.dumps({"event": "price_alert_check_failed", "error": str(exc)}, ensure_ascii=False))
+        raise typer.Exit(code=1) from exc
+
+
+@app.command("price-alerts-check", hidden=True)
+def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"))) -> None:
+    """Compatibility alias for check-alerts."""
+    check_alerts(database=database)
 
 
 async def _harvest_device(provider, device, source: str, repository) -> None:
