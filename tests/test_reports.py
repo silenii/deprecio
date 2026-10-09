@@ -2,6 +2,9 @@ from datetime import datetime, timezone
 
 from deprecio.api.models import AnalyticsDeviceResponse
 from deprecio.reports import ReportService
+from deprecio.api.dependencies import get_specs_provider
+from deprecio.api.main import app
+from fastapi.testclient import TestClient
 
 
 def device(name="Phone | Pro", model_id="phone-1"):
@@ -28,3 +31,17 @@ def test_multiple_devices_and_empty_market_stats():
     text = content.decode("utf-8-sig")
     assert "a" in text and "b" in text
     assert text.count("\n") == 3
+
+
+def test_report_endpoint_supports_download_formats(sample_device):
+    class Provider:
+        def get_device(self, model_id):
+            return sample_device
+
+    app.dependency_overrides[get_specs_provider] = Provider
+    try:
+        response = TestClient(app).get("/api/v1/reports/xiaomi-14", params={"format": "csv"})
+        assert response.status_code == 200
+        assert response.headers["content-disposition"].endswith('xiaomi-14.csv"')
+    finally:
+        app.dependency_overrides.clear()

@@ -210,3 +210,28 @@ def test_market_card_returns_empty_market_data(sample_device):
         }
     finally:
         app.dependency_overrides.clear()
+
+
+def test_frontend_exposes_recommendation_and_compare_controls():
+    response = TestClient(app).get("/")
+
+    assert response.status_code == 200
+    assert 'id="recommendation-form"' in response.text
+    assert 'name="budget_min_rub"' in response.text
+    assert 'id="compare-selected"' in response.text
+    assert 'aria-label=' in response.text
+
+
+def test_recommendations_smoke_accepts_budget_form_fields(sample_device):
+    from tests.test_recommendations import RecommendationProvider
+
+    app.dependency_overrides[get_specs_provider] = lambda: RecommendationProvider(sample_device)
+    try:
+        response = TestClient(app).post(
+            "/api/v1/recommendations",
+            json={"budget_min_rub": 50000, "budget_max_rub": 70000, "tier": "Flagship", "brand": "Xiaomi", "limit": 5},
+        )
+        assert response.status_code == 200
+        assert "results" in response.json()
+    finally:
+        app.dependency_overrides.clear()

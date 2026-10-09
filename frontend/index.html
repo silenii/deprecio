@@ -19,19 +19,32 @@
       <p>Ищите модель, изучайте прогноз снижения стоимости и сравнивайте устройства на основе данных API.</p>
       <form id="search-form" class="search" role="search">
         <label class="sr-only" for="search-input">Поиск устройства</label>
-        <input id="search-input" name="q" autocomplete="off" placeholder="Например, GPT 6 Luna 14" required>
-        <button type="submit">Найти</button>
+        <input id="search-input" name="q" autocomplete="off" placeholder="Например, GPT 6 Luna 14" aria-label="Название устройства" required>
+        <button type="submit" aria-label="Найти устройства">Найти</button>
       </form>
     </section>
 
     <section id="search-section" class="results-section" aria-labelledby="results-title">
-      <div class="section-heading"><div><p class="eyebrow">КАТАЛОГ</p><h2 id="results-title">Результаты поиска</h2></div><span id="result-count"></span></div>
+      <div class="section-heading"><div><p class="eyebrow">КАТАЛОГ</p><h2 id="results-title">Результаты поиска</h2></div><div><span id="result-count"></span><button id="compare-selected" class="secondary" type="button" aria-label="Сравнить выбранные устройства" disabled>Сравнить выбранные</button></div></div>
       <div id="search-message" class="message" role="status">Введите модель, чтобы начать поиск.</div>
       <div id="results" class="result-grid"></div>
+      <div id="compare-result"></div>
+    </section>
+
+    <section id="recommendation-section" class="recommendation-section" aria-labelledby="recommendation-title">
+      <div class="section-heading"><div><p class="eyebrow">ПОДБОР</p><h2 id="recommendation-title">Рекомендации по бюджету</h2></div></div>
+      <form id="recommendation-form" class="recommendation-form">
+        <label for="budget_min_rub">Бюджет от<input id="budget_min_rub" name="budget_min_rub" type="number" min="0" step="1" aria-label="Минимальный бюджет в рублях"></label>
+        <label for="budget_max_rub">Бюджет до<input id="budget_max_rub" name="budget_max_rub" type="number" min="0" step="1" aria-label="Максимальный бюджет в рублях"></label>
+        <label for="tier">Класс<select id="tier" name="tier" aria-label="Класс устройства"><option value="">Любой</option><option>Budget</option><option>Midrange</option><option>Flagship</option></select></label>
+        <label for="brand">Бренд<input id="brand" name="brand" type="text" aria-label="Бренд устройства"></label>
+        <button type="submit" aria-label="Подобрать устройства по бюджету">Подобрать</button>
+      </form>
+      <div id="recommendation-result"></div>
     </section>
 
     <section id="device-section" class="device-section" hidden aria-labelledby="device-title">
-      <div class="section-heading"><div><p class="eyebrow">ПРОФИЛЬ УСТРОЙСТВА</p><h2 id="device-title">Устройство</h2></div><button id="share-button" class="secondary" type="button">Скопировать ссылку</button></div>
+      <div class="section-heading"><div><p class="eyebrow">ПРОФИЛЬ УСТРОЙСТВА</p><h2 id="device-title">Устройство</h2></div><button id="share-button" class="secondary" type="button" aria-label="Скопировать ссылку на устройство">Скопировать ссылку</button></div>
       <div id="device-error" class="message error" hidden></div>
       <div id="device-content"></div>
     </section>
