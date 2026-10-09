@@ -16,6 +16,24 @@
 - веб-клиент аналитики на vanilla HTML/CSS/JavaScript без отдельного frontend-фреймворка;
 - CLI-точка входа `deprecio`.
 
+## Android-клиент
+
+Для Android выбран **React Native + Expo SDK 51 + TypeScript**: этот вариант требует меньше нативной инфраструктуры для существующего REST API, чем Kotlin + Jetpack Compose. Клиент находится в [`mobile/`](C:/Projects/Deprecio/mobile) и не содержит серверной бизнес-логики: MSRP, RV, `listings_count` и `forecast_summary` отображаются из ответов API.
+
+Минимальная поддерживаемая версия Android — **API 23 (Android 6.0)**. Требуются Node.js 18+, npm и Android Studio с эмулятором или подключённым устройством.
+
+```powershell
+cd C:\Projects\Deprecio\mobile
+npm install
+# API на хост-машине для Android Emulator:
+$env:EXPO_PUBLIC_API_URL = "http://10.0.2.2:8000/api/v1"
+npm run android
+```
+
+Для физического устройства укажите в `EXPO_PUBLIC_API_URL` LAN-адрес компьютера, например `http://192.168.1.10:8000/api/v1`. Перед запуском API выполните из корня: `poetry run uvicorn deprecio.api.main:app --reload`. Проверка TypeScript: `npm run typecheck`.
+
+Мобильный клиент поддерживает поиск, карточку устройства, сравнение 2–3 устройств, локальное избранное через AsyncStorage, обработку сетевых ошибок с таймаутом 10 секунд, адаптивную нижнюю навигацию и системную светлую/тёмную тему. Авторизация и серверная синхронизация избранного на этом этапе отсутствуют.
+
 В прогнозе `predicted_rv_percent` означает прогнозную цену в процентах от
 переданной текущей цены (`current_price_rub`), а не от MSRP. Профиль прогноза
 принимает `0 <= brand_decay_monthly_rate < 1`, неотрицательный

@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Deprecio",
+    "slug": "deprecio-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": { "package": "ru.deprecio.mobile", "minSdkVersion": 23 }
+  }
+}
