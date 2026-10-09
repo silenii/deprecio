@@ -147,6 +147,19 @@ python -m deprecio.bot.main
 
 После установки доступна команда `deprecio`.
 
+### Сбор снимков истории цен
+
+В PowerShell можно собрать снимок одной модели или пройти весь каталог:
+
+```powershell
+deprecio harvest-snapshot --model-id xiaomi-14 --source avito
+deprecio harvest-all --source avito
+deprecio harvest-all --dry-run
+```
+
+Снимки сохраняются в `data/price_history.db`. Повторный запуск для той же модели,
+источника и даты заменяет существующий снимок; `--dry-run` выполняет сбор без записи.
+
 ## Запуск через Docker
 
 Создайте `.env`, затем соберите и запустите сервис:

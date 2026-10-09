@@ -131,6 +131,14 @@ class CachedSpecsProvider(BaseSpecsProvider):
     async def get_market_stats(self, device: Device, refresh: bool = False):
         """Получает статистику рынка из Avito с многоуровневым кешированием."""
         from deprecio.harvester import MarketAggregator, SnapshotGenerator
+        from deprecio.price_history.repository import SQLitePriceHistoryRepository
+
+        history = SQLitePriceHistoryRepository()
+
+        def aggregate_and_save(listings):
+            stats = MarketAggregator.aggregate_market_data(device, listings)
+            MarketAggregator.persist_market_data(stats, "avito", history)
+            return stats
 
         if not refresh and device.model_id in self._market_stats_cache:
             return self._market_stats_cache[device.model_id]
@@ -140,7 +148,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
         if not refresh and SnapshotGenerator.is_snapshot_fresh(device.model_id, ttl_hours):
             cached = SnapshotGenerator.load_snapshot(device.model_id)
             if cached:
-                stats = MarketAggregator.aggregate_market_data(device, cached)
+                stats = aggregate_and_save(cached)
                 self._market_stats_cache[device.model_id] = stats
                 return stats
 
@@ -152,7 +160,7 @@ class CachedSpecsProvider(BaseSpecsProvider):
             listings = SnapshotGenerator.generate_listings(device, count=35)
 
         SnapshotGenerator.save_snapshot(device, listings)
-        stats = MarketAggregator.aggregate_market_data(device, listings)
+        stats = aggregate_and_save(listings)
         self._market_stats_cache[device.model_id] = stats
         return stats
 

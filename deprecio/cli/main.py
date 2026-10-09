@@ -12,6 +12,8 @@ from deprecio.catalog_audit import audit_catalog, has_failures
 from deprecio.api.routes.analytics import _device_response
 from deprecio.reports import ReportService
 from deprecio.catalog_import import import_catalog
+from deprecio.harvester import MarketAggregator
+from deprecio.price_history.repository import SQLitePriceHistoryRepository
 
 
 app = typer.Typer(help="Deprecio smartphone depreciation analytics.")
@@ -77,6 +79,61 @@ def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"
     service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
     for event in asyncio.run(service.check()):
         typer.echo(f"{event.user_id} {event.model_id} {event.current_price_rub:g} руб.")
+
+
+async def _harvest_device(provider, device, source: str, repository) -> None:
+    """Collect, aggregate and optionally persist one market snapshot."""
+    from deprecio.harvester.avito_scraper import AvitoScraper
+    from deprecio.harvester import SnapshotGenerator
+
+    listings = await AvitoScraper().fetch_and_convert(device.name, device.model_id)
+    if not listings:
+        listings = SnapshotGenerator.generate_listings(device, count=35)
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+    if repository is not None:
+        MarketAggregator.persist_market_data(stats, source, repository)
+
+
+@app.command("harvest-snapshot")
+def harvest_snapshot(
+    model_id: str = typer.Option(..., "--model-id"),
+    source: str = typer.Option("avito", "--source"),
+    catalog: Path = typer.Option(Path("data/catalog.json")),
+    database: Path = typer.Option(Path("data/price_history.db")),
+) -> None:
+    """Collect and save one market snapshot."""
+    provider = CachedSpecsProvider(catalog_file=catalog)
+    try:
+        device = provider.get_device(model_id)
+        asyncio.run(_harvest_device(provider, device, source, SQLitePriceHistoryRepository(database)))
+    except Exception as exc:
+        typer.echo(f"Ошибка {model_id}: {exc}")
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Обработано: 1, пропущено: 0, ошибок: 0 ({model_id})")
+
+
+@app.command("harvest-all")
+def harvest_all(
+    source: str = typer.Option("avito", "--source"),
+    catalog: Path = typer.Option(Path("data/catalog.json")),
+    database: Path = typer.Option(Path("data/price_history.db")),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+) -> None:
+    """Collect and save snapshots for every catalog device."""
+    provider = CachedSpecsProvider(catalog_file=catalog)
+    devices = provider.search_devices("")
+    repository = None if dry_run else SQLitePriceHistoryRepository(database)
+    processed = skipped = errors = 0
+    for device in devices:
+        try:
+            asyncio.run(_harvest_device(provider, device, source, repository))
+            processed += 1
+        except Exception as exc:
+            errors += 1
+            typer.echo(f"Ошибка {device.model_id}: {exc}")
+    typer.echo(f"Обработано: {processed}, пропущено: {skipped}, ошибок: {errors}")
+    if errors:
+        raise typer.Exit(code=1)
 
 
 @app.command("report-export")
