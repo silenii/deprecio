@@ -17,10 +17,20 @@ from deprecio.reports import ReportService
 from deprecio.catalog_import import import_catalog
 from deprecio.harvester import MarketAggregator
 from deprecio.price_history.repository import SQLitePriceHistoryRepository
+from deprecio.production import backup_databases, metrics
 
 
 app = typer.Typer(help="Deprecio smartphone depreciation analytics.")
 logger = logging.getLogger(__name__)
+
+
+@app.command("backup")
+def backup(all: bool = typer.Option(False, "--all")) -> None:
+    """Back up all configured SQLite databases."""
+    if not all:
+        raise typer.BadParameter("use --all")
+    created = backup_databases()
+    typer.echo(json.dumps({"backups": [str(path) for path in created]}, ensure_ascii=False))
 
 
 @app.callback()
@@ -92,6 +102,7 @@ async def _send_telegram_event(token: str, event) -> None:
 async def _check_alerts(database: Path, dry_run: bool, timeout: float) -> None:
     service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
     events = await asyncio.wait_for(service.check(), timeout=timeout)
+    metrics.alerts_triggered += len(events)
     token = os.getenv("DEPRECIO_BOT_TOKEN", "").strip()
     for event in events:
         payload = {

@@ -21,7 +21,19 @@ jobs:
         run: python -m pip install -e ".[dev]"
 
       - name: Run tests
-        run: python -m pytest tests/ -v --tb=short --cov=deprecio --cov-report=term-missing --cov-fail-under=70
+        run: python -m pytest tests/ -v --tb=short --cov=deprecio --cov-report=term-missing --cov-report=html --cov-fail-under=70
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov
+
+      - name: Audit dependencies (warning only)
+        continue-on-error: true
+        run: |
+          python -m pip install pip-audit
+          python -m pip_audit || echo "pip-audit reported vulnerable dependencies"
 
       - name: Check syntax (compile all modules)
         run: |

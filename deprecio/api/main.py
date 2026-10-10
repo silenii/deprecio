@@ -2,11 +2,14 @@
 
 import logging
 import sqlite3
+import asyncio
+import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from deprecio.api.routes.devices import router as devices_router
@@ -16,11 +19,24 @@ from deprecio.api.routes.price_history import router as price_history_router
 from deprecio.api.routes.recommendations import router as recommendations_router
 from deprecio.api.routes.reports import router as reports_router
 from deprecio.logging_config import setup_logging
+from deprecio.production import ProductionMiddleware, backup_loop, check_database_integrity, metrics
 
 setup_logging()
 logger = logging.getLogger("deprecio.api")
 
-app = FastAPI(title="Deprecio API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    check_database_integrity()
+    task = asyncio.create_task(backup_loop(int(os.getenv("DEPRECIO_BACKUP_INTERVAL_SEC", "3600"))))
+    try:
+        yield
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+app = FastAPI(title="Deprecio API", version="1.0.0", lifespan=lifespan)
+app.add_middleware(ProductionMiddleware)
 app.include_router(price_history_router, prefix="/api/v1")
 app.include_router(devices_router, prefix="/api/v1")
 app.include_router(forecast_router, prefix="/api/v1")
@@ -93,3 +109,8 @@ def health_check() -> dict:
         status_code=status_code,
         content={"status": overall, "checks": checks},
     )
+
+
+@app.get("/metrics", include_in_schema=False)
+def prometheus_metrics() -> PlainTextResponse:
+    return PlainTextResponse(metrics.render(), media_type="text/plain; version=0.0.4")

@@ -37,6 +37,8 @@ env/
 *.db
 !data/global_devices.db
 .cache/
+backups/
+htmlcov/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

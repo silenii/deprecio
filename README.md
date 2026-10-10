@@ -152,6 +152,16 @@ cp .env.example .env
 poetry run uvicorn deprecio.api.main:app --reload
 ```
 
+## Production checklist
+
+- задайте `DEPRECIO_BOT_TOKEN` только через secret-хранилище, не через репозиторий или логи;
+- задайте `DEPRECIO_RATE_LIMIT` (по умолчанию 60 запросов в минуту на IP);
+- задайте `DEPRECIO_BACKUP_KEEP` и `DEPRECIO_BACKUP_INTERVAL_SEC`, а каталог `backups/` включите в защищённое локальное хранилище;
+- проверьте `CATALOG_FILE`, `GLOBAL_DB_FILE`, `CACHE_DIR` и права записи процесса;
+- используйте `LOG_FORMAT=json`, `LOG_LEVEL=INFO` или строже и не помещайте токены в сообщения логов;
+- перед production-запуском выполните `deprecio backup --all`, `pytest` и `ruff`;
+- endpoint `/metrics` отдаёт Prometheus text exposition и должен быть доступен только доверенной сети или через защищённый reverse proxy.
+
 ## Запуск через venv и pip
 
 ```bash
