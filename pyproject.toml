@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "deprecio"
-version = "0.1.0"
+version = "1.0.0"
 description = "Smartphone depreciation analytics, residual value tracker, and price decay predictor."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -47,3 +47,9 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["E501"]
+
+[tool.coverage.run]
+omit = [
+    "deprecio/bot/handlers/*",
+    "deprecio/bot/main.py",
+]

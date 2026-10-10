@@ -35,7 +35,6 @@ env/
 # Database & Cache
 *.sqlite3
 *.db
-!data/global_devices.db
 .cache/
 backups/
 htmlcov/
@@ -55,3 +54,5 @@ data/global_devices.db
 data/snapshots/
 .cache/
 *.tmp.db
+.coverage
+data/*-preview.json
