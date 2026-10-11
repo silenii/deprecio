@@ -14,13 +14,16 @@ from fastapi.testclient import TestClient
 def test_app_settings_requires_bot_token(monkeypatch):
     """AppSettings must raise ValidationError when DEPRECIO_BOT_TOKEN is missing."""
     monkeypatch.delenv("DEPRECIO_BOT_TOKEN", raising=False)
-    monkeypatch.setattr("os.environ", {k: v for k, v in os.environ.items() if k != "DEPRECIO_BOT_TOKEN"})
     from pydantic import ValidationError
 
     from deprecio.bot.config import AppSettings
+    from pydantic_settings import SettingsConfigDict
+
+    class _IsolatedSettings(AppSettings):
+        model_config = SettingsConfigDict(env_file=".env.nonexistent", extra="ignore", case_sensitive=False)
 
     with pytest.raises((ValidationError, Exception)):
-        AppSettings()
+        _IsolatedSettings()
 
 
 def test_app_settings_defaults(monkeypatch):
