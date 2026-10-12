@@ -236,14 +236,18 @@ docker build --target runtime -t deprecio:local .
 
 ## Синхронизация
 
-### Избранное Telegram
+### Репозитории (GitHub / GitVerse)
 
-При первом запуске бот создаёт `data/favorites.db` (SQLite) с таблицей `favorites`: `user_id`, `model_id`, `created_at`; первичный ключ пары `user_id/model_id` предотвращает дубли. Данные принадлежат Telegram `user_id`, без отдельной авторизации. Команда `/favorites` и кнопка меню показывают максимум 10 записей на страницу с навигацией. FSM и тексты сообщений в это хранилище не записываются.
+Синхронизация с удалёнными репозиториями:
 
 ```bash
 git push origin main
 git push gitverse main
 ```
+
+### Избранное Telegram
+
+При первом запуске бот создаёт `data/favorites.db` (SQLite) с таблицей `favorites`: `user_id`, `model_id`, `created_at`; первичный ключ пары `user_id/model_id` предотвращает дубли. Данные принадлежат Telegram `user_id`, без отдельной авторизации. Команда `/favorites` и кнопка меню показывают максимум 10 записей на страницу с навигацией. FSM и тексты сообщений в это хранилище не записываются.
 
 ## Лицензия
 
