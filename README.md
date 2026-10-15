@@ -18,12 +18,12 @@
 
 ## Android-клиент
 
-Для Android выбран **React Native + Expo SDK 51 + TypeScript**: этот вариант требует меньше нативной инфраструктуры для существующего REST API, чем Kotlin + Jetpack Compose. Клиент находится в [`mobile/`](C:/Projects/Deprecio/mobile) и не содержит серверной бизнес-логики: MSRP, RV, `listings_count` и `forecast_summary` отображаются из ответов API.
+Для Android выбран **React Native + Expo SDK 51 + TypeScript**: этот вариант требует меньше нативной инфраструктуры для существующего REST API, чем Kotlin + Jetpack Compose. Клиент находится в [`mobile/`](mobile/) и не содержит серверной бизнес-логики: MSRP, RV, `listings_count` и `forecast_summary` отображаются из ответов API.
 
 Минимальная поддерживаемая версия Android — **API 23 (Android 6.0)**. Требуются Node.js 18+, npm и Android Studio с эмулятором или подключённым устройством.
 
 ```powershell
-cd C:\Projects\Deprecio\mobile
+cd mobile
 npm install
 # API на хост-машине для Android Emulator:
 $env:EXPO_PUBLIC_API_URL = "http://10.0.2.2:8000/api/v1"
