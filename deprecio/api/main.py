@@ -71,7 +71,7 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 
 
 @app.get("/health", tags=["health"])
-def health_check() -> dict:
+def health_check() -> JSONResponse:
     """Health check — проверяет доступность ключевых зависимостей без раскрытия секретов."""
     checks: dict[str, str] = {}
 
