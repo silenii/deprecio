@@ -8,6 +8,7 @@ from deprecio.models.device import Device
 # Словарь транслитерации частых брендов и названий с русского на латиницу
 BRAND_TRANSLIT: Dict[str, str] = {
     "айфон": "iphone",
+    "эппл": "apple",
     "самсунг": "samsung",
     "сяоми": "xiaomi",
     "редми": "redmi",
