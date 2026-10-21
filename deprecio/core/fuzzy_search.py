@@ -14,6 +14,7 @@ BRAND_TRANSLIT: Dict[str, str] = {
     "редми": "redmi",
     "поко": "poco",
     "пиксель": "pixel",
+    "гугл": "google",
     "галакси": "galaxy",
     "насинг": "nothing",
     "нафинг": "nothing",
