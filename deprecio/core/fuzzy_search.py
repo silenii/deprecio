@@ -48,6 +48,7 @@ MULTI_WORD_TRANSLIT = {
     "про макс": "pro max",
     "про плюс": "pro plus",
     "самсунг галакси": "samsung galaxy",
+    "гугл пиксель": "google pixel",
 }
 
 
