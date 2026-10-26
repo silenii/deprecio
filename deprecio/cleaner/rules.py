@@ -44,7 +44,7 @@ EDITION_PATTERNS: Dict[EditionType, List[str]] = {
         "hyperos cn", "miui cn", "без band 20", "без бенда 20",
     ],
     EditionType.GLOBAL_EU: [
-        "global", "глобал", "европейская версия", "eu", "international",
+        "global", "глобал", "европейская версия", "европеец", "eu", "international",
         "международная версия",
     ],
     EditionType.US: [
