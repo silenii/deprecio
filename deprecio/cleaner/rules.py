@@ -48,7 +48,7 @@ EDITION_PATTERNS: Dict[EditionType, List[str]] = {
         "международная версия",
     ],
     EditionType.US: [
-        "американская версия", "us версия", " us ", "for usa",
+        "американская версия", "американец", "us версия", " us ", "for usa",
         "esim only", "only esim", "snapdragon us", "ll/a", "ll/a)",
     ],
     EditionType.IN: [
