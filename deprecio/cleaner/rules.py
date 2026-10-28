@@ -52,7 +52,7 @@ EDITION_PATTERNS: Dict[EditionType, List[str]] = {
         "esim only", "only esim", "snapdragon us", "ll/a", "ll/a)",
     ],
     EditionType.IN: [
-        "индийская версия", " in ", "india", "for india",
+        "индийская версия", "индиец", " in ", "india", "for india",
     ],
 }
 
