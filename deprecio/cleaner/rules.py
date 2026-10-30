@@ -36,7 +36,7 @@ DEFECT_KEYWORDS: List[str] = [
 EDITION_PATTERNS: Dict[EditionType, List[str]] = {
     EditionType.EAC_ROSTEST: [
         "ростест", "rostest", "официальный", "официал", "офиц",
-        "eac", "рст", "гарантия рф", "гарантия россия",
+        "eac", "еас", "рст", "гарантия рф", "гарантия россия",
     ],
     EditionType.CN: [
         "китай", "китайская версия", "cn версия", " cn ", "for china",
