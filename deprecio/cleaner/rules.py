@@ -29,6 +29,7 @@ DEFECT_KEYWORDS: List[str] = [
     "demo",
     "демо",
     "не работает face id",
+    "не работает touch id",
     "не работает nfc",
     "без отпечатка",
 ]
