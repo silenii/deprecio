@@ -41,6 +41,7 @@ DEFECT_KEYWORDS: List[str] = [
     "не работает wi-fi",
     "не работает wifi",
     "не работает bluetooth",
+    "не работает блютуз",
     "без face id",
     "без touch id",
     "без отпечатка",
