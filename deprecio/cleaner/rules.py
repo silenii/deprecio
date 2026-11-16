@@ -46,6 +46,7 @@ DEFECT_KEYWORDS: List[str] = [
     "без face id",
     "без touch id",
     "без true tone",
+    "без трутона",
     "без отпечатка",
 ]
 
