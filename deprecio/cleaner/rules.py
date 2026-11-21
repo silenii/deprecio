@@ -47,6 +47,7 @@ DEFECT_KEYWORDS: List[str] = [
     "не ловит сеть",
     "не видит сим",
     "не видит sim",
+    "отвал модема",
     "без face id",
     "без touch id",
     "без true tone",
