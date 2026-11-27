@@ -31,7 +31,7 @@ def normalize_brand(b: str) -> str:
     b_lower = b.lower().strip()
     return BRAND_MAP.get(b_lower, b.title())
 
-def build_global_db(dest_path: Path) -> None:
+def build_global_db(dest_path: Path, catalog_path: Path = Path("data/catalog.json")) -> None:
     """Загружает датасеты GSMArena + современные устройства (2021-2024) и формирует SQLite базу."""
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = dest_path.with_suffix(".tmp.db")
@@ -131,6 +131,21 @@ def build_global_db(dest_path: Path) -> None:
             modern_count += 1
         print(f"[+] Добавлено {modern_count} уникальных современных моделей!")
 
+    if catalog_path.exists():
+        print(f"[*] Добавление избранного каталога из {catalog_path}...")
+        catalog_records = json.loads(catalog_path.read_text(encoding="utf-8"))
+        if not isinstance(catalog_records, list):
+            raise ValueError("catalog root must be a list")
+        for item in catalog_records:
+            if not isinstance(item, dict) or not all(item.get(key) for key in ("model_id", "brand", "name")):
+                raise ValueError("catalog records must contain model_id, brand and name")
+            clean_name = normalize_search_text(f"{item['brand']} {item['name']}")
+            rows.append((
+                item["model_id"], item["brand"], item["name"], clean_name,
+                str(item.get("editions", [{}])[0].get("release_date") or ""),
+                item.get("chipset") or "", json.dumps(item, ensure_ascii=False),
+            ))
+
     print(f"[*] Всего {len(rows)} записей. Индексация в SQLite...")
     conn = sqlite3.connect(tmp_path)
     cur = conn.cursor()
@@ -182,6 +197,14 @@ def build_global_db(dest_path: Path) -> None:
 def build_catalog_db(catalog_path: Path, dest_path: Path) -> None:
     """Build the local SQLite catalog deterministically from catalog.json."""
     records = json.loads(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(records, list) or any(
+        not isinstance(item, dict) or not all(item.get(key) for key in ("model_id", "brand", "name"))
+        for item in records
+    ):
+        raise ValueError("catalog must be a list of records with model_id, brand and name")
+    ids = [item["model_id"] for item in records]
+    if len(ids) != len(set(ids)):
+        raise ValueError("catalog contains duplicate model_id values")
     rows = []
     for item in records:
         rows.append((
@@ -205,16 +228,73 @@ def build_catalog_db(catalog_path: Path, dest_path: Path) -> None:
         conn.commit()
     finally:
         conn.close()
+    conn = sqlite3.connect(tmp_path)
+    try:
+        result = conn.execute("PRAGMA integrity_check").fetchone()[0]
+    finally:
+        conn.close()
+    if result != "ok":
+        tmp_path.unlink(missing_ok=True)
+        raise sqlite3.DatabaseError(f"catalog database integrity check failed: {result}")
     os.replace(tmp_path, dest_path)
     print(f"[+] Каталог собран из {catalog_path}: {len(rows)} записей в {dest_path}")
+
+
+def merge_catalog_db(catalog_path: Path, database_path: Path) -> None:
+    """Add canonical catalog records to an existing global database atomically."""
+    records = json.loads(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(records, list) or any(
+        not isinstance(item, dict) or not all(item.get(key) for key in ("model_id", "brand", "name"))
+        for item in records
+    ):
+        raise ValueError("catalog must be a list of records with model_id, brand and name")
+    ids = [item["model_id"] for item in records]
+    if len(ids) != len(set(ids)):
+        raise ValueError("catalog contains duplicate model_id values")
+    if not database_path.exists():
+        raise FileNotFoundError(database_path)
+
+    tmp_path = database_path.with_suffix(".tmp.db")
+    tmp_path.unlink(missing_ok=True)
+    source = sqlite3.connect(database_path)
+    target = sqlite3.connect(tmp_path)
+    try:
+        source.backup(target)
+    finally:
+        source.close()
+    try:
+        target.executemany(
+            "INSERT OR REPLACE INTO phones (id, brand, name, clean_name, released_at, chipset, raw_specs) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [(
+                item["model_id"], item["brand"], item["name"],
+                normalize_search_text(f"{item['brand']} {item['name']}"),
+                str(item.get("editions", [{}])[0].get("release_date") or ""),
+                item.get("chipset") or "", json.dumps(item, ensure_ascii=False),
+            ) for item in records],
+        )
+        target.execute("INSERT INTO phones_fts(phones_fts) VALUES('rebuild')")
+        target.commit()
+        result = target.execute("PRAGMA integrity_check").fetchone()[0]
+        if result != "ok":
+            raise sqlite3.DatabaseError(f"database integrity check failed: {result}")
+    except Exception:
+        target.close()
+        tmp_path.unlink(missing_ok=True)
+        raise
+    target.close()
+    os.replace(tmp_path, database_path)
+    print(f"[+] Добавлено/обновлено {len(records)} curated-моделей в {database_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--catalog", type=Path, help="Build from local catalog.json instead of remote datasets")
+    parser.add_argument("--merge-catalog", type=Path, help="Merge a curated catalog into an existing database")
     parser.add_argument("--output", type=Path, default=Path("data/global_devices.db"))
     args = parser.parse_args()
-    if args.catalog:
+    if args.merge_catalog:
+        merge_catalog_db(args.merge_catalog, args.output)
+    elif args.catalog:
         build_catalog_db(args.catalog, args.output)
     else:
         build_global_db(args.output)

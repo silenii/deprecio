@@ -107,12 +107,12 @@ class CachedSpecsProvider(BaseSpecsProvider):
         dev = self._memory_cache.get(model_id)
         if dev:
             return dev
-        # Поиск по глобальной базе при прямом запросе model_id
+        # An exact identifier lookup must never resolve to a different model.
         if self.global_db_file and self.global_db_file.exists():
             try:
                 conn = sqlite3.connect(self.global_db_file)
                 cur = conn.cursor()
-                cur.execute("SELECT brand, name, raw_specs FROM phones WHERE id = ? OR clean_name LIKE ? LIMIT 1", (model_id, f"%{model_id.replace('-', ' ')}%"))
+                cur.execute("SELECT brand, name, raw_specs FROM phones WHERE id = ? LIMIT 1", (model_id,))
                 row = cur.fetchone()
                 conn.close()
                 if row:
