@@ -35,6 +35,8 @@ async def format_device_card(device: Device, catalog: CachedSpecsProvider) -> st
         "",
         "📦 **Доступные версии и комплектация:**",
     ]
+    if device.estimated_fields:
+        lines.insert(4, "⚠️ Часть характеристик и MSRP оценочные, а не подтверждённые источником.")
 
     base_msrp_rub = device_msrp_rub(device)
     first_release_date: Optional[date] = None

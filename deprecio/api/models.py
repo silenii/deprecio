@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ForecastPoint(BaseModel):
@@ -55,6 +55,7 @@ class AnalyticsDeviceResponse(BaseModel):
     name: str
     brand: str
     tier: str
+    estimated_fields: list[str] = Field(default_factory=list)
     characteristics: dict[str, Any]
     msrp_rub: float
     current_price_rub: float | None

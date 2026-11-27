@@ -98,3 +98,4 @@ class Device(BaseModel):
     lineage: DeviceLineage
     editions: List[RegionalEdition] = Field(default_factory=list)
     forecast_profile: Optional[ForecastProfile] = None
+    estimated_fields: List[str] = Field(default_factory=list, description="Fields inferred rather than supplied by the source")

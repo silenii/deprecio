@@ -170,6 +170,7 @@ def test_compare_endpoint_returns_normalized_analytics(sample_device):
         assert response.status_code == 200
         assert response.json()["devices"][0]["msrp_rub"] == 89990
         assert response.json()["devices"][0]["current_price_rub"] is None
+        assert response.json()["devices"][0]["estimated_fields"] == []
     finally:
         app.dependency_overrides.clear()
 

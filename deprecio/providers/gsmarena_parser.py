@@ -43,7 +43,10 @@ class GSMArenaParser:
         # 2. Дата релиза
         release_date = cls._parse_launch_date(specs.get("announced") or specs.get("status"))
         defaults = default_parameters(cls._estimate_tier(name), brand)
-        release_date = release_date or defaults["release_date"]
+        estimated_fields = ["msrp", "regional_editions", "bundle", "forecast_profile"]
+        if release_date is None:
+            release_date = defaults["release_date"]
+            estimated_fields.append("release_date")
 
         # 3. Сеть и бэнды
         network_str = f"{specs.get('technology', '')} {specs.get('4g_bands', '')} {specs.get('5g_bands', '')}"
@@ -53,6 +56,8 @@ class GSMArenaParser:
 
         # 4. SIM и eSIM
         sim_str = specs.get("sim", "").lower()
+        if not sim_str:
+            estimated_fields.append("sim")
         has_esim = "esim" in sim_str
         sim_slots = "2x NanoSIM"
         if "esim only" in sim_str:
@@ -67,6 +72,8 @@ class GSMArenaParser:
         has_nfc = bool(nfc_str) and ("yes" in nfc_str or "да" in nfc_str) and "no" not in nfc_str
         if not nfc_str and tier in ("Flagship", "Ultra-Flagship"):
             has_nfc = True
+        if not nfc_str:
+            estimated_fields.append("nfc")
 
         # 6. Зарядка и мощность
         charging_str = specs.get("charging", "") or specs.get("battery_charging", "")
@@ -80,6 +87,7 @@ class GSMArenaParser:
         rel_year = release_date.year if release_date else None
         variants = cls._parse_memory_variants(memory_str, brand, tier, release_year=rel_year)
         if not variants:
+            estimated_fields.append("memory_variants")
             variants = [MemoryVariant(ram_gb=defaults["ram_gb"], storage_gb=defaults["storage_gb"], msrp_local=defaults["msrp_rub"], currency=Currency.RUB)]
 
         # 8. Сборка версий (Global / EAC)
@@ -92,6 +100,8 @@ class GSMArenaParser:
             sim_slots=sim_slots,
             has_nfc=has_nfc,
         )
+        if not any(specs.get(key) for key in ("technology", "4g_bands", "5g_bands")):
+            estimated_fields.append("network_bands")
 
         bundle = BundleContents(
             has_charger=has_charger,
@@ -116,6 +126,7 @@ class GSMArenaParser:
             lineage=DeviceLineage(series=cls._extract_series(name), tier=cls._estimate_tier(name)),
             editions=editions,
             forecast_profile=profile,
+            estimated_fields=estimated_fields,
         )
 
     @classmethod

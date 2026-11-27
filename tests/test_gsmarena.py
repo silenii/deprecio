@@ -70,6 +70,15 @@ def test_parser_extracts_correct_fields(mock_raw_s24):
     assert edition.memory_variants[0].storage_gb == 256
     assert edition.memory_variants[0].ram_gb == 12
     assert edition.memory_variants[2].storage_gb == 1024
+    assert {"msrp", "regional_editions", "bundle", "forecast_profile"}.issubset(device.estimated_fields)
+    assert "release_date" not in device.estimated_fields
+
+
+def test_parser_marks_fallback_values_as_estimates():
+    device = GSMArenaParser.parse_device({"phone_name": "Unknown Phone", "slug": "unknown-phone"})
+
+    assert device is not None
+    assert {"msrp", "release_date", "memory_variants", "regional_editions", "bundle"}.issubset(device.estimated_fields)
 
 
 def test_parser_detects_chinese_version_without_band_20(mock_raw_s24):

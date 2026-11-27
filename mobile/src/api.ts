@@ -3,7 +3,7 @@ export type Device = {
   model_id: string; name: string; brand: string; tier: string; msrp_rub: number;
   current_price_rub: number | null; residual_value_percent: number | null;
   depreciation_drop_percent: number | null; forecast_summary: string | null;
-  market_stats: MarketStats | null; characteristics?: Record<string, unknown>;
+  market_stats: MarketStats | null; estimated_fields?: string[]; characteristics?: Record<string, unknown>;
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000/api/v1').replace(/\/$/, '');

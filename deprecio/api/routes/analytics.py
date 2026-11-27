@@ -57,6 +57,7 @@ async def _device_response(provider: BaseSpecsProvider, device: Device) -> Analy
         name=device.name,
         brand=device.brand,
         tier=device.lineage.tier,
+        estimated_fields=device.estimated_fields,
         characteristics={"chipset": device.chipset, "series": device.lineage.series,
                          "editions": [edition.edition_type for edition in device.editions]},
         msrp_rub=msrp,
