@@ -185,6 +185,9 @@ def test_snapshot_persistence_disk_io(device):
     with tempfile.TemporaryDirectory() as tmp_dir:
         base_path = Path(tmp_dir)
         listings = SnapshotGenerator.generate_listings(device, count=15)
+        for index, item in enumerate(listings):
+            item.listing_id = f"real-{index}"
+            item.url = f"https://www.avito.ru/item/{index}"
         saved_file = SnapshotGenerator.save_snapshot(device, listings, base_dir=base_path)
         assert saved_file.exists()
 
@@ -192,6 +195,13 @@ def test_snapshot_persistence_disk_io(device):
         assert loaded is not None
         assert len(loaded) == 15
         assert loaded[0].listing_id == listings[0].listing_id
+
+
+def test_snapshot_loader_rejects_legacy_generated_avito_listings(device, tmp_path):
+    SnapshotGenerator.save_snapshot(device, SnapshotGenerator.generate_listings(device), base_dir=tmp_path)
+
+    assert SnapshotGenerator.load_snapshot(device.model_id, base_dir=tmp_path) is None
+    assert not SnapshotGenerator.is_snapshot_fresh(device.model_id, base_dir=tmp_path)
 
 
 def test_cached_specs_provider_does_not_invent_or_persist_listings(device, tmp_path, monkeypatch):

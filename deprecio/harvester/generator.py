@@ -190,7 +190,14 @@ class SnapshotGenerator:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return [SecondaryListing(**item) for item in data]
+                listings = [SecondaryListing(**item) for item in data]
+                if any(
+                    listing.listing_id.startswith(f"avito-{model_id}-")
+                    and listing.url.endswith(f"/item/{listing.listing_id}")
+                    for listing in listings
+                ):
+                    return None
+                return listings
         except Exception:
             return None
 
@@ -206,7 +213,7 @@ class SnapshotGenerator:
 
         save_dir = base_dir or Path("data/snapshots")
         file_path = save_dir / f"{model_id}.json"
-        if not file_path.exists():
+        if not file_path.exists() or cls.load_snapshot(model_id, base_dir=save_dir) is None:
             return False
         age = datetime.now() - datetime.fromtimestamp(file_path.stat().st_mtime)
         return age < timedelta(hours=ttl_hours)
