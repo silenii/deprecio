@@ -279,15 +279,22 @@ class CachedSpecsProvider(BaseSpecsProvider):
             if not search_results:
                 return None
 
-            best_match = search_results[0]
-            raw_specs = await self.client.get_device_raw_specs(best_match.slug)
-            if not raw_specs:
-                return None
+            ranked_results = sorted(
+                search_results,
+                key=lambda result: calculate_match_score(query, result.name, ""),
+                reverse=True,
+            )
+            for result in ranked_results:
+                if not result.slug or calculate_match_score(query, result.name, "") < 0.50:
+                    continue
+                raw_specs = await self.client.get_device_raw_specs(result.slug)
+                if not raw_specs:
+                    continue
 
-            device = GSMArenaParser.parse_device(raw_specs)
-            if device:
-                self._save_to_disk_cache(device)
-                return device
+                device = GSMArenaParser.parse_device(raw_specs)
+                if device and calculate_match_score(query, device.name, device.brand) >= 0.50:
+                    self._save_to_disk_cache(device)
+                    return device
         except (httpx.TimeoutException, httpx.HTTPError) as exc:
             logger.warning("external_fetch_failed operation=fetch_device model_id=%s error_type=%s", query, type(exc).__name__)
         except (TypeError, ValueError, ValidationError) as exc:
