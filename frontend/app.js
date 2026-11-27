@@ -132,7 +132,10 @@ async function recommend(updateUrl = true) {
   try {
     const data = await api('/recommendations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const rows = data.results.map((item) => `<tr><td>${escapeHtml(item.device.name)}</td><td>${money(item.price_rub)}</td><td>${item.device.residual_value_percent == null ? '—' : `${item.device.residual_value_percent.toFixed(1)}%`}</td><td>${item.score.toFixed(2)}</td></tr>`).join('');
-    $('recommendation-result').innerHTML = `<table class="comparison"><thead><tr><th>Имя</th><th>Цена</th><th>RV</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table>${rows ? '' : '<p class="message">Подходящих устройств не найдено.</p>'}`;
+    const noMarket = data.insufficient_data?.length
+      ? `<p class="message">Для ${data.insufficient_data.length} моделей нет проверенных цен б/у; они исключены из подбора.</p>`
+      : '';
+    $('recommendation-result').innerHTML = `${rows ? `<table class="comparison"><thead><tr><th>Имя</th><th>Цена б/у</th><th>RV</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="message">Подходящих устройств с проверенной ценой б/у не найдено.</p>'}${noMarket}`;
   } catch (error) { $('recommendation-result').innerHTML = `<p class="message error">${escapeHtml(error.message)}</p>`; }
 }
 

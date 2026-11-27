@@ -43,10 +43,7 @@ class RecommendationService:
                 stats = await stats
             if stats and stats.median_price_rub > 0 and stats.clean_listings_count > 0:
                 return stats.median_price_rub, "market_median"
-        try:
-            return device_msrp_rub(device), "msrp_fallback"
-        except (TypeError, ValueError):
-            return None, "unavailable"
+        return None, "unavailable"
 
     async def recommend(
         self,

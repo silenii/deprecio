@@ -369,6 +369,6 @@ async def test_recommendation_filters_and_insufficient_data(sample_device):
     result = await RecommendationService(Provider()).recommend(
         tier="Flagship", brand="Xiaomi", min_storage_gb=128, preferred_specs={"brand": "Xiaomi"}
     )
-    assert result["results"]
-    assert result["results"][0]["price_source"] == "msrp_fallback"
+    assert not result["results"]
+    assert result["insufficient_data"][0]["price_source"] == "unavailable"
     assert await RecommendationService(Provider()).recommend(brand="Apple") == {"results": [], "insufficient_data": [], "total": 0}
