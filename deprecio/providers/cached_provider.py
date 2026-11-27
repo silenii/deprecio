@@ -137,7 +137,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
 
         def aggregate_and_save(listings):
             stats = MarketAggregator.aggregate_market_data(device, listings)
-            MarketAggregator.persist_market_data(stats, "avito", history)
+            if stats.total_raw_listings:
+                MarketAggregator.persist_market_data(stats, "avito", history)
             return stats
 
         if not refresh and device.model_id in self._market_stats_cache:
@@ -156,10 +157,8 @@ class CachedSpecsProvider(BaseSpecsProvider):
 
         scraper = AvitoScraper()
         listings = await scraper.fetch_and_convert(device.name, device.model_id)
-        if not listings:
-            listings = SnapshotGenerator.generate_listings(device, count=35)
-
-        SnapshotGenerator.save_snapshot(device, listings)
+        if listings:
+            SnapshotGenerator.save_snapshot(device, listings)
         stats = aggregate_and_save(listings)
         self._market_stats_cache[device.model_id] = stats
         return stats

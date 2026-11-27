@@ -73,25 +73,31 @@ async def format_device_card(device: Device, catalog: CachedSpecsProvider) -> st
         today = date.today()
         months_old = max(1, (today.year - first_release_date.year) * 12 + today.month - first_release_date.month)
 
-    market_stats = await catalog.get_market_stats(device)
-    current_market_price = market_stats.median_price_rub
+    try:
+        market_stats = await catalog.get_market_stats(device)
+    except Exception as exc:
+        logger.warning("market_data_unavailable operation=device_card model_id=%s error_type=%s", device.model_id, type(exc).__name__)
+        market_stats = None
+    current_market_price = market_stats.median_price_rub if market_stats else None
 
-    analysis = analyze_sweet_spot(
-        months_since_release=months_old,
-        current_price=current_market_price,
-        msrp_price=base_msrp_rub,
-    )
-
-    lines.extend([
-        "📊 **Анализ вторичного рынка (Авито / РФ):**",
-        f"• **Возраст модели:** {months_old} мес. с момента релиза",
-        f"• **Медианная цена (б/у):** ≈ {current_market_price:,.0f} ₽",
-        f"• **Диапазон рынка (IQR):** {market_stats.p25_price_rub:,.0f} — {market_stats.p75_price_rub:,.0f} ₽",
-        f"• **Выборка лотов:** {market_stats.clean_listings_count} шт. (отсеяно выбросов/дефектов: {market_stats.defective_count + market_stats.outliers_count})",
-        f"• **Остаточная стоимость (RV%):** {analysis.current_rv_percent:.1f}% ({analysis.total_drop_percent:+.1f}%)",
-        "",
-        f"💡 **Вердикт Deprecio:**\n{analysis.advice_buyer}",
-    ])
+    lines.append("📊 **Анализ вторичного рынка (Авито / РФ):**")
+    if market_stats and market_stats.clean_listings_count:
+        analysis = analyze_sweet_spot(
+            months_since_release=months_old,
+            current_price=current_market_price,
+            msrp_price=base_msrp_rub,
+        )
+        lines.extend([
+            f"• **Возраст модели:** {months_old} мес. с момента релиза",
+            f"• **Медианная цена (б/у):** ≈ {current_market_price:,.0f} ₽",
+            f"• **Диапазон рынка (IQR):** {market_stats.p25_price_rub:,.0f} — {market_stats.p75_price_rub:,.0f} ₽",
+            f"• **Выборка лотов:** {market_stats.clean_listings_count} шт. (отсеяно дефектных/выбросов: {market_stats.defective_count + market_stats.outliers_count})",
+            f"• **Остаточная стоимость (RV%):** {analysis.current_rv_percent:.1f}% ({analysis.total_drop_percent:+.1f}%)",
+            "",
+            f"💡 **Вердикт Deprecio:**\n{analysis.advice_buyer}",
+        ])
+    else:
+        lines.append("• Нет проверенных объявлений. Рыночная цена и прогноз временно недоступны.")
 
     return "\n".join(lines)
 

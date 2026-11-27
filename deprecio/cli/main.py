@@ -144,13 +144,13 @@ def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"
 async def _harvest_device(provider, device, source: str, repository) -> None:
     """Collect, aggregate and optionally persist one market snapshot."""
     from deprecio.harvester.avito_scraper import AvitoScraper
-    from deprecio.harvester import SnapshotGenerator
 
     listings = await AvitoScraper().fetch_and_convert(device.name, device.model_id)
     if not listings:
-        listings = SnapshotGenerator.generate_listings(device, count=35)
+        typer.echo(f"Пропущено: нет объявлений источника {source} ({device.model_id})")
+        return
     stats = MarketAggregator.aggregate_market_data(device, listings)
-    if repository is not None:
+    if repository is not None and stats.total_raw_listings:
         MarketAggregator.persist_market_data(stats, source, repository)
 
 

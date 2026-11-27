@@ -194,19 +194,29 @@ def test_snapshot_persistence_disk_io(device):
         assert loaded[0].listing_id == listings[0].listing_id
 
 
-def test_cached_specs_provider_get_market_stats(device):
+def test_cached_specs_provider_does_not_invent_or_persist_listings(device, tmp_path, monkeypatch):
     import asyncio
-    provider = CachedSpecsProvider()
+    from deprecio.harvester.avito_scraper import AvitoScraper
+    from deprecio.price_history.repository import SQLitePriceHistoryRepository
 
-    # get_market_stats is async — run it synchronously for the test
-    stats = asyncio.run(provider.get_market_stats(device))
+    provider = CachedSpecsProvider(cache_dir=tmp_path / "cache", global_db_file=tmp_path / "missing.db")
+    monkeypatch.setattr(provider, "_market_stats_cache", {})
+    monkeypatch.setattr(provider, "_config", None)
+    monkeypatch.setattr("deprecio.price_history.repository.SQLitePriceHistoryRepository",
+                        lambda: SQLitePriceHistoryRepository(tmp_path / "history.db"))
 
-    assert stats is not None
+    async def no_listings(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(AvitoScraper, "fetch_and_convert", no_listings)
+    stats = asyncio.run(provider.get_market_stats(device, refresh=True))
+
+    assert stats.total_raw_listings == 0
     assert stats.model_id == device.model_id
-    assert stats.median_price_rub > 0
-    assert EditionType.EAC_ROSTEST.value in stats.editions
+    assert stats.median_price_rub == 0
+    assert stats.clean_listings_count == 0
+    assert not SQLitePriceHistoryRepository(tmp_path / "history.db").list(device.model_id)
 
-    # Повторный вызов берёт из кэша (синхронно через asyncio.run)
     cached_stats = asyncio.run(provider.get_market_stats(device))
     assert stats is cached_stats
 

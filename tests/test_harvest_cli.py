@@ -55,3 +55,20 @@ def test_harvest_all_dry_run_does_not_create_repository(monkeypatch, tmp_path, s
     result = CliRunner().invoke(app, ["harvest-all", "--dry-run", "--catalog", str(catalog)])
     assert result.exit_code == 0
     assert calls == [(sample_device.model_id, None)]
+
+
+def test_harvest_without_listings_skips_history_write(monkeypatch, sample_device):
+    from deprecio.cli.main import _harvest_device
+
+    class Scraper:
+        async def fetch_and_convert(self, *args):
+            return []
+
+    class Repository:
+        def save(self, point):
+            raise AssertionError("empty market data must not be persisted")
+
+    monkeypatch.setattr("deprecio.harvester.avito_scraper.AvitoScraper", lambda: Scraper())
+    import asyncio
+    result = asyncio.run(_harvest_device(None, sample_device, "avito", Repository()))
+    assert result is None
