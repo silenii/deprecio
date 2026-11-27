@@ -38,14 +38,20 @@ async def handle_new_releases(message: Message, catalog: CachedSpecsProvider) ->
     today = date.today()
     cutoff = today - timedelta(days=90)
     devices = []
+    releases_found = False
     for device in catalog.search_devices(""):
         released = _release_date(device)
         if released and released >= cutoff:
+            releases_found = True
             devices.append((released, device))
 
     devices.sort(key=lambda item: item[0], reverse=True)
     if not devices:
-        await message.answer("🆕 За последние 3 месяца новых моделей не найдено.", reply_markup=get_back_keyboard())
+        text = (
+            "🆕 Новинки найдены, но проверенных рыночных цен пока нет."
+            if releases_found else "🆕 За последние 3 месяца новых моделей не найдено."
+        )
+        await message.answer(text, reply_markup=get_back_keyboard())
         return
 
     blocks = ["🆕 **Новинки за последние 3 месяца**"]
@@ -53,7 +59,12 @@ async def handle_new_releases(message: Message, catalog: CachedSpecsProvider) ->
         months_old = _months_since(released, today)
         profile = device.forecast_profile
         expected_months = profile.expected_sweet_spot_months if profile else 6
-        stats = await catalog.get_market_stats(device)
+        try:
+            stats = await catalog.get_market_stats(device)
+        except Exception:
+            continue
+        if not stats.clean_listings_count:
+            continue
         current_price = stats.median_price_rub
         analysis = analyze_sweet_spot(months_old, current_price, current_price / 0.6,
                                       expected_plateau_months=expected_months)

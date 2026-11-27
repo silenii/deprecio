@@ -165,7 +165,15 @@ async def handle_forecast_callback(callback: CallbackQuery, catalog: CachedSpecs
                 base_price = mv.msrp_local
                 break
 
-    market_stats = await catalog.get_market_stats(dev)
+    try:
+        market_stats = await catalog.get_market_stats(dev)
+    except Exception as exc:
+        logger.warning("market_data_unavailable operation=forecast model_id=%s error_type=%s", model_id, type(exc).__name__)
+        await callback.answer("Рыночные данные временно недоступны.", show_alert=True)
+        return
+    if not market_stats.clean_listings_count:
+        await callback.answer("Нет проверенных объявлений для прогноза.", show_alert=True)
+        return
     current_market_price = market_stats.median_price_rub
 
     report = generate_price_forecast(dev, current_price_rub=current_market_price, months_horizon=12)
@@ -202,7 +210,12 @@ async def handle_editions_callback(callback: CallbackQuery, catalog: CachedSpecs
         await callback.answer("Модель не найдена.")
         return
 
-    market_stats = await catalog.get_market_stats(dev)
+    try:
+        market_stats = await catalog.get_market_stats(dev)
+    except Exception as exc:
+        logger.warning("market_data_unavailable operation=editions model_id=%s error_type=%s", model_id, type(exc).__name__)
+        await callback.answer("Рыночные данные временно недоступны.", show_alert=True)
+        return
 
     lines = [
         f"⚖️ **Сравнение региональных версий: {dev.name}**\n",
@@ -255,6 +268,8 @@ async def handle_editions_callback(callback: CallbackQuery, catalog: CachedSpecs
         "из-за китайской вилки и отсутствия Band 20. Учитывайте этот дисконт при покупке и перепродаже!"
     )
 
+    if not market_stats.clean_listings_count:
+        lines.append("• Рыночные цены версий: нет проверенных объявлений.")
     await callback.message.answer("\n".join(lines), reply_markup=get_back_keyboard(), parse_mode="Markdown")
     await callback.answer()
 

@@ -238,10 +238,11 @@ docker build --target runtime -t deprecio:local .
 
 ### Репозитории (GitHub / GitVerse)
 
-Синхронизация с удалёнными репозиториями:
+Рабочие изменения отправляйте короткими ветками `codex/*` в оба remote и открывайте PR в GitHub. После **Squash and merge** обновите зеркало GitVerse:
 
-```bash
-git push origin main
+```powershell
+git switch main
+git pull --ff-only origin main
 git push gitverse main
 ```
 

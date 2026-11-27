@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.base import StorageKey
 
-from deprecio.bot.handlers.compare import receive_second
+from deprecio.bot.handlers.compare import _comparison, receive_second
 from deprecio.bot.handlers.device import handle_device_search
 
 
@@ -51,11 +51,21 @@ def test_compare_missing_device_is_reported_and_fsm_is_cleared():
     asyncio.run(state.set_data({"first_query": "unknown phone"}))
     catalog = Mock(search_devices=Mock(return_value=[]), get_or_fetch_device=AsyncMock(return_value=None))
 
-    asyncio.run(receive_second(message, state, catalog, Mock()))
+    asyncio.run(receive_second(message, state, catalog))
 
     message.answer.assert_awaited_once()
     assert "Не удалось найти" in message.answer.await_args.args[0]
     assert asyncio.run(state.get_state()) is None
+
+
+def test_comparison_does_not_treat_empty_market_as_zero_price(sample_device):
+    stats = SimpleNamespace(clean_listings_count=0, median_price_rub=0)
+    catalog = SimpleNamespace(get_market_stats=AsyncMock(return_value=stats))
+
+    result = asyncio.run(_comparison(sample_device, sample_device, catalog))
+
+    assert "недостаточно" in result
+    assert "0 ₽" not in result
 
 
 def test_oversized_query_is_rejected():

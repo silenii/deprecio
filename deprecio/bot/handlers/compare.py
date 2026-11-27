@@ -8,7 +8,6 @@ from aiogram.types import Message
 
 from deprecio.core import analyze_sweet_spot, calculate_residual_value
 from deprecio.providers import CachedSpecsProvider
-from deprecio.harvester import MarketAggregator
 from deprecio.core.analytics_defaults import device_msrp_rub
 from .safety import get_user_query, log_user_action
 
@@ -45,8 +44,10 @@ def _table(rows: list[tuple[str, str, str]]) -> str:
     return "\n".join(lines)
 
 
-async def _comparison(first, second, catalog: CachedSpecsProvider, market_aggregator: MarketAggregator) -> str:
+async def _comparison(first, second, catalog: CachedSpecsProvider) -> str:
     first_stats, second_stats = await catalog.get_market_stats(first), await catalog.get_market_stats(second)
+    if not first_stats.clean_listings_count or not second_stats.clean_listings_count:
+        return "Проверенных объявлений пока недостаточно для сравнения рыночных цен. Попробуйте позже."
     first_price, second_price = first_stats.median_price_rub, second_stats.median_price_rub
     first_rv = calculate_residual_value(first_price, _msrp_rub(first))
     second_rv = calculate_residual_value(second_price, _msrp_rub(second))
@@ -101,8 +102,7 @@ async def receive_first(message: Message, state: FSMContext) -> None:
 
 
 @router.message(CompareStates.waiting_second)
-async def receive_second(message: Message, state: FSMContext, catalog: CachedSpecsProvider,
-                         market_aggregator: MarketAggregator) -> None:
+async def receive_second(message: Message, state: FSMContext, catalog: CachedSpecsProvider) -> None:
     query = get_user_query(message.text)
     if not query:
         await message.answer("Введите название второй модели текстом:")
@@ -123,4 +123,8 @@ async def receive_second(message: Message, state: FSMContext, catalog: CachedSpe
     if not first or not second:
         await message.answer("Не удалось найти одну из моделей. Попробуйте ещё раз через /compare.")
         return
-    await message.answer(await _comparison(first, second, catalog, market_aggregator), parse_mode="Markdown")
+    try:
+        text = await _comparison(first, second, catalog)
+    except Exception:
+        text = "Не удалось получить рыночные данные сейчас. Попробуйте позже."
+    await message.answer(text, parse_mode="Markdown")
