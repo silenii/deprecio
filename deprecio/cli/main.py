@@ -120,6 +120,18 @@ async def _check_alerts(database: Path | None, dry_run: bool, timeout: float) ->
             repository.mark_checked(repository.get(event.user_id, event.model_id), event.current_price_rub, True)
 
 
+async def _run_alert_worker(interval_sec: int, timeout_sec: float) -> None:
+    """Check price alerts repeatedly; transient failures wait until the next cycle."""
+    while True:
+        try:
+            await _check_alerts(None, False, timeout_sec)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("price_alert_worker_check_failed")
+        await asyncio.sleep(interval_sec)
+
+
 @app.command("check-alerts")
 def check_alerts(
     database: Path | None = typer.Option(None),
@@ -135,6 +147,28 @@ def check_alerts(
         logger.exception("price_alert_check_failed")
         typer.echo(json.dumps({"event": "price_alert_check_failed", "error": str(exc)}, ensure_ascii=False))
         raise typer.Exit(code=1) from exc
+
+
+@app.command("price-alert-worker")
+def price_alert_worker() -> None:
+    """Run recurring price checks for deployments that keep this process alive."""
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    if not os.getenv("DEPRECIO_BOT_TOKEN", "").strip():
+        raise typer.BadParameter("DEPRECIO_BOT_TOKEN is required for the alert worker")
+    try:
+        interval = int(os.getenv("PRICE_ALERT_CHECK_INTERVAL_SEC", "3600"))
+        timeout = float(os.getenv("DEPRECIO_ALERT_CHECK_TIMEOUT_SEC", "60"))
+        if interval < 1 or timeout <= 0:
+            raise ValueError("alert interval and timeout must be positive")
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"Price alert worker started (interval={interval}s)")
+    try:
+        asyncio.run(_run_alert_worker(interval, timeout))
+    except KeyboardInterrupt:
+        typer.echo("Price alert worker stopped")
 
 
 @app.command("price-alerts-check", hidden=True)

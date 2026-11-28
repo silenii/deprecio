@@ -23,6 +23,24 @@ services:
       retries: 3
       start_period: 15s
 
+  alert-worker:
+    build:
+      context: .
+      target: runtime
+    command: ["python", "-m", "deprecio.cli.main", "price-alert-worker"]
+    env_file:
+      - .env
+    environment:
+      DEPRECIO_STATE_DIR: /app/state
+      DEPRECIO_BACKUP_DIR: /app/backups
+    restart: unless-stopped
+    volumes:
+      - deprecio-cache:/app/.cache/devices
+      - deprecio-snapshots:/app/.cache/snapshots
+      - deprecio-state:/app/state
+      - deprecio-backups:/app/backups
+      - ./data:/app/data:ro
+
   # Опционально: HTTP API (uvicorn)
   api:
     build:

@@ -177,28 +177,30 @@ python -m deprecio.bot.main
 
 После установки доступна команда `deprecio`.
 
-### Проверка ценовых алертов по расписанию
+### Автоматические ценовые алерты
 
-Команда выполняет одну проверку и завершает процесс. Без токена Telegram события
-выводятся в JSON-логе; `--dry-run` дополнительно отключает отправку уведомлений:
+`docker compose up -d` запускает отдельный процесс `alert-worker`, который
+проверяет подписки с интервалом `PRICE_ALERT_CHECK_INTERVAL_SEC` (по умолчанию
+3600 секунд). Для отправки сообщений ему нужен `DEPRECIO_BOT_TOKEN` из `.env`.
+После временной ошибки worker пишет её в лог и продолжает работу со следующей
+проверки.
+
+Для постоянного запуска вне Docker:
 
 ```powershell
-$env:DEPRECIO_BOT_TOKEN = "123456:token"
+deprecio price-alert-worker
+```
+
+Для ручной однократной проверки можно оставить команду `check-alerts`;
+`--dry-run` отключает отправку сообщений:
+
+```powershell
 deprecio check-alerts
 deprecio check-alerts --dry-run
 ```
 
-Пример задания Windows Task Scheduler, запускающего проверку каждый час:
-
-```powershell
-$action = New-ScheduledTaskAction -Execute "C:\Projects\Deprecio\.venv\Scripts\deprecio.exe" -Argument "check-alerts"
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(1) -RepetitionInterval (New-TimeSpan -Hours 1)
-Register-ScheduledTask -TaskName "Deprecio price alerts" -Action $action -Trigger $trigger -RunLevel Highest
-```
-
-Перед регистрацией задайте `DEPRECIO_BOT_TOKEN` в окружении пользователя или
-используйте `.env`; лимит одной проверки настраивается через
-`DEPRECIO_ALERT_CHECK_TIMEOUT_SEC` (по умолчанию 60 секунд).
+Лимит одной проверки настраивается через `DEPRECIO_ALERT_CHECK_TIMEOUT_SEC`
+(по умолчанию 60 секунд).
 
 ### Сбор снимков истории цен
 

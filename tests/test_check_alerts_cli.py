@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+import pytest
 from typer.testing import CliRunner
 
 from deprecio.cli.main import app
@@ -95,3 +96,47 @@ def test_check_alerts_returns_error_on_timeout(monkeypatch, tmp_path):
 
     assert result.exit_code == 1
     assert "price_alert_check_failed" in result.stdout
+
+
+def test_alert_worker_retries_after_a_transient_failure(monkeypatch):
+    from deprecio.cli.main import _run_alert_worker
+
+    calls = 0
+    sleeps = 0
+
+    async def check(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("temporary source failure")
+
+    async def sleep(_seconds):
+        nonlocal sleeps
+        sleeps += 1
+        if sleeps == 2:
+            raise asyncio.CancelledError
+
+    monkeypatch.setattr("deprecio.cli.main._check_alerts", check)
+    monkeypatch.setattr("deprecio.cli.main.asyncio.sleep", sleep)
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(_run_alert_worker(10, 5))
+
+    assert calls == 2
+
+
+def test_alert_worker_command_uses_configured_interval(monkeypatch):
+    settings = {}
+
+    async def run(interval, timeout):
+        settings.update(interval=interval, timeout=timeout)
+
+    monkeypatch.setenv("DEPRECIO_BOT_TOKEN", "token")
+    monkeypatch.setenv("PRICE_ALERT_CHECK_INTERVAL_SEC", "42")
+    monkeypatch.setenv("DEPRECIO_ALERT_CHECK_TIMEOUT_SEC", "17")
+    monkeypatch.setattr("deprecio.cli.main._run_alert_worker", run)
+
+    result = runner.invoke(app, ["price-alert-worker"])
+
+    assert result.exit_code == 0
+    assert settings == {"interval": 42, "timeout": 17.0}
