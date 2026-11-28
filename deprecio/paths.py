@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def state_directory() -> Path:
-    return Path(os.getenv("DEPRECIO_STATE_DIR", "data"))
+    return Path(os.getenv("DEPRECIO_STATE_DIR", ".state"))
 
 
 def backup_directory() -> Path:
