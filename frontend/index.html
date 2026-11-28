@@ -5,23 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Аналитика остаточной стоимости смартфонов">
   <title>Deprecio Analytics</title>
-  <link rel="stylesheet" href="/frontend/styles.css?v=3">
+  <link rel="stylesheet" href="/frontend/styles.css?v=5">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/">Deprecio <span>ANALYTICS</span></a>
-    <span class="api-status" id="api-status" aria-live="polite">API: проверка</span>
+    <a class="brand" href="/" aria-label="Deprecio — на главную">
+      <span class="brand-mark" aria-hidden="true">D</span>
+      <span class="brand-name">Deprecio<small>АНАЛИТИКА СМАРТФОНОВ</small></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a href="#search-section">Каталог</a>
+      <a href="#recommendation-section">Подбор</a>
+    </nav>
+    <span class="api-status" id="api-status" aria-live="polite"><i></i> API: проверка</span>
   </header>
   <main>
     <section class="intro">
-      <p class="eyebrow">РЫНОК УСТРОЙСТВ</p>
-      <h1>Аналитика цены<br>без догадок</h1>
-      <p>Ищите модель, изучайте прогноз снижения стоимости и сравнивайте устройства на основе данных API.</p>
-      <form id="search-form" class="search" role="search">
-        <label class="sr-only" for="search-input">Поиск устройства</label>
-        <input id="search-input" name="q" autocomplete="off" placeholder="Например, GPT 6 Luna 14" aria-label="Название устройства" required>
-        <button type="submit" aria-label="Найти устройства">Найти</button>
-      </form>
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> РЫНОК СМАРТФОНОВ</p>
+        <h1>Выбирайте<br><em>с пониманием.</em></h1>
+        <p class="hero-lead">Характеристики, версии и стоимость смартфонов — в одном месте. Сравнивайте модели и принимайте решение на основе данных.</p>
+        <form id="search-form" class="search" role="search">
+          <label class="sr-only" for="search-input">Поиск устройства</label>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="search-input" name="q" autocomplete="off" placeholder="Найдите смартфон, например iPhone 15" aria-label="Название устройства" required>
+          <button type="submit" aria-label="Найти устройства">Найти <span aria-hidden="true">↗</span></button>
+        </form>
+        <p class="search-hint">Поиск по бренду, модели или серии</p>
+      </div>
+      <aside class="hero-card" aria-label="Возможности Deprecio">
+        <div class="hero-card-top"><span class="hero-orbit" aria-hidden="true">D</span><span class="hero-card-label">ВАШ ГИД ПО ВЫБОРУ</span></div>
+        <div class="hero-feature"><span>01</span><div><strong>Сравнение моделей</strong><p>Ключевые различия без лишнего шума</p></div><b aria-hidden="true">↗</b></div>
+        <div class="hero-feature"><span>02</span><div><strong>Региональные версии</strong><p>Память, связь и комплектация</p></div><b aria-hidden="true">↗</b></div>
+        <div class="hero-feature"><span>03</span><div><strong>Анализ стоимости</strong><p>История и прогноз при наличии данных</p></div><b aria-hidden="true">↗</b></div>
+        <div class="hero-card-foot"><span class="hero-pulse"></span> Каталог устройств Deprecio</div>
+      </aside>
     </section>
 
     <section id="search-section" class="results-section" aria-labelledby="results-title">
@@ -49,6 +67,7 @@
       <div id="device-content"></div>
     </section>
   </main>
-  <script src="/frontend/app.js?v=3" defer></script>
+  <footer class="site-footer"><a class="brand" href="/">Deprecio</a><span>Решения о покупке — с опорой на данные.</span></footer>
+  <script src="/frontend/app.js?v=5" defer></script>
 </body>
 </html>
