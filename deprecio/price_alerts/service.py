@@ -20,7 +20,10 @@ class PriceAlertService:
             if price <= 0:
                 continue
             notify = price <= alert.target_price_rub and price != alert.last_notified_price_rub
-            self.repository.mark_checked(alert, price, notify)
+            # Triggered alerts are acknowledged by the delivery layer only after
+            # Telegram accepts the message; failed sends remain eligible to retry.
+            if not notify:
+                self.repository.mark_checked(alert, price, False)
             if notify:
                 events.append(PriceAlertEvent(alert.user_id, alert.model_id, price, alert.target_price_rub))
         return events

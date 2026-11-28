@@ -20,6 +20,8 @@ from deprecio.api.routes.recommendations import router as recommendations_router
 from deprecio.api.routes.reports import router as reports_router
 from deprecio.logging_config import setup_logging
 from deprecio.production import ProductionMiddleware, backup_loop, check_database_integrity, metrics
+from deprecio.paths import state_directory
+from deprecio.providers.exceptions import MarketDataUnavailableError
 
 setup_logging()
 logger = logging.getLogger("deprecio.api")
@@ -70,6 +72,11 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
     )
 
 
+@app.exception_handler(MarketDataUnavailableError)
+async def market_data_unavailable_handler(_request: Request, _exc: MarketDataUnavailableError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"code": "market_source_unavailable", "message": "Market source is temporarily unavailable"})
+
+
 @app.get("/health", tags=["health"])
 def health_check() -> JSONResponse:
     """Health check — проверяет доступность ключевых зависимостей без раскрытия секретов."""
@@ -101,6 +108,16 @@ def health_check() -> JSONResponse:
         checks["cache_write"] = "ok"
     except OSError:
         checks["cache_write"] = "error"
+
+    state_dir = state_directory()
+    try:
+        state_dir.mkdir(parents=True, exist_ok=True)
+        test_file = state_dir / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        checks["state_write"] = "ok"
+    except OSError:
+        checks["state_write"] = "error"
 
     overall = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
     status_code = 200 if overall == "ok" else 207

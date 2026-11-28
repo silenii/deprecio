@@ -11,4 +11,5 @@ __pycache__
 tests
 raw_snapshots
 data/snapshots
-CONTINUATION_PROMPTS.md
+data/*.db
+!data/global_devices.db

@@ -7,6 +7,7 @@ from deprecio.core import (
     calculate_edition_gap,
     calculate_residual_value,
 )
+from deprecio.production import Metrics
 
 
 def test_calculate_residual_value_normal():
@@ -69,3 +70,13 @@ def test_analyze_sweet_spot_legacy_plateau():
     result = analyze_sweet_spot(months_since_release=24, current_price=35000, msrp_price=100000)
     assert result.market_stage == MarketStage.LEGACY_PLATEAU
     assert result.is_sweet_spot is False
+
+
+def test_metrics_bound_route_cardinality_and_latency_storage():
+    metrics = Metrics()
+    for index in range(2000):
+        metrics.observe("GET" if index % 2 else f"/model/{index}", index / 1000)
+
+    assert len(metrics.requests) <= 32
+    assert all(len(samples) <= 1024 for samples in metrics.latencies.values())
+    assert 'route="GET"' in metrics.render()

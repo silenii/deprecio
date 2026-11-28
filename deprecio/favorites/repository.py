@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from deprecio.paths import state_database_path
 
 @dataclass(frozen=True)
 class Favorite:
@@ -22,8 +23,8 @@ class FavoritesRepository(Protocol):
 
 
 class SQLiteFavoritesRepository:
-    def __init__(self, database_path: str | Path = "data/favorites.db") -> None:
-        self.database_path = Path(database_path)
+    def __init__(self, database_path: str | Path | None = None) -> None:
+        self.database_path = Path(database_path) if database_path else state_database_path("favorites.db")
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.database_path) as connection:
             connection.execute(

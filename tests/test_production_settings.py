@@ -6,6 +6,7 @@ import sqlite3
 
 import pytest
 from fastapi.testclient import TestClient
+from deprecio.paths import state_database_path
 
 
 # ─────────────────────────── AppSettings ────────────────────────────
@@ -29,6 +30,7 @@ def test_app_settings_requires_bot_token(monkeypatch):
 def test_app_settings_defaults(monkeypatch):
     """AppSettings should load sane defaults when only the required token is set."""
     monkeypatch.setenv("DEPRECIO_BOT_TOKEN", "123456:TESTTOKEN_AAABBBCCC")
+    monkeypatch.delenv("LOG_FORMAT", raising=False)
     # Remove .env influence by pointing to a non-existent file
     from deprecio.bot.config import AppSettings
     from pydantic_settings import SettingsConfigDict
@@ -200,3 +202,18 @@ def test_health_check_db_error(api_client, tmp_path, monkeypatch):
     data = resp.json()
     assert data["checks"]["global_db"] == "error"
     assert resp.status_code == 207
+def test_runtime_state_migrates_existing_database_to_configured_writable_dir(tmp_path, monkeypatch):
+    legacy = tmp_path / "data"
+    legacy.mkdir()
+    old_database = legacy / "favorites.db"
+    with sqlite3.connect(old_database) as connection:
+        connection.execute("CREATE TABLE favorites (value TEXT)")
+        connection.execute("INSERT INTO favorites VALUES ('preserved')")
+    state = tmp_path / "state"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DEPRECIO_STATE_DIR", str(state))
+
+    migrated = state_database_path("favorites.db")
+
+    with sqlite3.connect(migrated) as connection:
+        assert connection.execute("SELECT value FROM favorites").fetchone() == ("preserved",)

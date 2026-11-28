@@ -38,8 +38,8 @@ COPY --chown=deprecio:deprecio deprecio ./deprecio
 COPY --chown=deprecio:deprecio data ./data
 
 # Create writable dirs with correct ownership BEFORE switching user
-RUN mkdir -p /app/.cache/devices /app/.cache/snapshots \
-    && chown -R deprecio:deprecio /app/.cache
+RUN mkdir -p /app/.cache/devices /app/.cache/snapshots /app/state /app/backups \
+    && chown -R deprecio:deprecio /app/.cache /app/state /app/backups
 
 USER deprecio
 

@@ -24,6 +24,8 @@ async def test_price_crossing_threshold_and_repeated_check_is_idempotent(tmp_pat
     provider.price = 100
     events = await PriceAlertService(repository, provider).check()
     assert len(events) == 1
+    assert len(await PriceAlertService(repository, provider).check()) == 1
+    repository.mark_checked(repository.get(1, "phone"), 100, True)
     assert await PriceAlertService(repository, provider).check() == []
 
 

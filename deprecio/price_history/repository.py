@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
+from deprecio.paths import state_database_path
 from .models import PriceHistoryPoint
 
 
@@ -17,8 +18,8 @@ class PriceHistoryRepository(Protocol):
 
 
 class SQLitePriceHistoryRepository:
-    def __init__(self, database_path: str | Path = "data/price_history.db") -> None:
-        self.database_path = Path(database_path)
+    def __init__(self, database_path: str | Path | None = None) -> None:
+        self.database_path = Path(database_path) if database_path else state_database_path("price_history.db")
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.database_path) as connection:
             connection.execute("""CREATE TABLE IF NOT EXISTS price_history (

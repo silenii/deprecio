@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from deprecio.cli.main import app
 from deprecio.price_alerts.models import PriceAlertEvent
+from deprecio.price_alerts.repository import SQLitePriceAlertRepository
 
 
 runner = CliRunner()
@@ -52,10 +53,34 @@ def test_check_alerts_returns_error_when_telegram_is_unavailable(monkeypatch, tm
     monkeypatch.setattr("deprecio.cli.main.PriceAlertService.check", check)
     monkeypatch.setattr("deprecio.cli.main._send_telegram_event", send)
     monkeypatch.setenv("DEPRECIO_BOT_TOKEN", "token")
-    result = runner.invoke(app, ["check-alerts", "--database", str(tmp_path / "alerts.db")])
+    database = tmp_path / "alerts.db"
+    repository = SQLitePriceAlertRepository(database)
+    repository.upsert(42, "phone", 100)
+    result = runner.invoke(app, ["check-alerts", "--database", str(database)])
 
     assert result.exit_code == 1
     assert "price_alert_check_failed" in result.stdout
+    assert repository.get(42, "phone").last_notified_price_rub is None
+
+
+def test_check_alerts_acknowledges_only_after_telegram_delivery(monkeypatch, tmp_path):
+    async def check(*args, **kwargs):
+        return [_event()]
+
+    async def send(*args, **kwargs):
+        return None
+
+    database = tmp_path / "alerts.db"
+    repository = SQLitePriceAlertRepository(database)
+    repository.upsert(42, "phone", 100)
+    monkeypatch.setattr("deprecio.cli.main.PriceAlertService.check", check)
+    monkeypatch.setattr("deprecio.cli.main._send_telegram_event", send)
+    monkeypatch.setenv("DEPRECIO_BOT_TOKEN", "token")
+
+    result = runner.invoke(app, ["check-alerts", "--database", str(database)])
+
+    assert result.exit_code == 0
+    assert repository.get(42, "phone").last_notified_price_rub == 90
 
 
 

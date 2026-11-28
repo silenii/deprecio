@@ -9,7 +9,8 @@ import os
 import sqlite3
 import statistics
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
+from deprecio.paths import backup_directory, state_directory
 from pathlib import Path
 from threading import Lock
 
@@ -18,25 +19,27 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
 logger = logging.getLogger("deprecio.production")
-DATABASE_NAMES = ("global_devices.db", "price_history.db", "favorites.db", "price_alerts.db")
+STATE_DATABASE_NAMES = ("price_history.db", "favorites.db", "price_alerts.db")
 
 
 class Metrics:
     def __init__(self) -> None:
         self._lock = Lock()
-        self.requests: dict[str, int] = defaultdict(int)
-        self.latencies: dict[str, list[float]] = defaultdict(list)
+        self.requests: dict[str, int] = {}
+        self.latencies: dict[str, deque[float]] = {}
         self.alerts_triggered = 0
 
     def observe(self, route: str, elapsed: float) -> None:
         with self._lock:
-            self.requests[route] += 1
-            self.latencies[route].append(elapsed)
+            if route not in self.requests and len(self.requests) >= 31:
+                route = "other"
+            self.requests[route] = self.requests.get(route, 0) + 1
+            self.latencies.setdefault(route, deque(maxlen=1024)).append(elapsed)
 
     def render(self, catalog_path: Path = Path("data/catalog.json")) -> str:
         with self._lock:
             requests = dict(self.requests)
-            latencies = {key: list(value) for key, value in self.latencies.items()}
+            latencies = {key: tuple(value) for key, value in self.latencies.items()}
             alerts = self.alerts_triggered
         lines = [
             "# HELP deprecio_http_requests_total Total HTTP requests by route",
@@ -65,29 +68,37 @@ class ProductionMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.limit = limit if limit is not None else int(os.getenv("DEPRECIO_RATE_LIMIT", "60"))
         self.window = window
-        self._requests: dict[str, deque[float]] = defaultdict(deque)
+        self._requests: OrderedDict[str, deque[float]] = OrderedDict()
         self._lock = Lock()
 
     async def dispatch(self, request: Request, call_next):
         now = time.monotonic()
         address = request.client.host if request.client else "unknown"
         with self._lock:
-            bucket = self._requests[address]
+            bucket = self._requests.get(address)
+            if bucket is None:
+                if len(self._requests) >= 10_000:
+                    self._requests.popitem(last=False)
+                bucket = deque()
+                self._requests[address] = bucket
+            else:
+                self._requests.move_to_end(address)
             while bucket and bucket[0] <= now - self.window:
                 bucket.popleft()
-            limited = len(bucket) >= self.limit
-            if not limited:
+            limited = self.limit > 0 and len(bucket) >= self.limit
+            if self.limit > 0 and not limited:
                 bucket.append(now)
         if limited:
             return PlainTextResponse("Too Many Requests\n", status_code=429, headers={"Retry-After": str(self.window)})
         started = time.perf_counter()
         response = await call_next(request)
-        metrics.observe(request.url.path, time.perf_counter() - started)
+        metrics.observe(request.method, time.perf_counter() - started)
         return response
 
 
-def database_paths(data_dir: Path = Path("data")) -> list[Path]:
-    return [data_dir / name for name in DATABASE_NAMES]
+def database_paths(data_dir: Path = Path("data"), state_dir: Path | None = None) -> list[Path]:
+    state_dir = state_dir or state_directory()
+    return [data_dir / "global_devices.db", *(state_dir / name for name in STATE_DATABASE_NAMES)]
 
 
 def check_database_integrity(paths: list[Path] | None = None) -> None:
@@ -104,10 +115,13 @@ def check_database_integrity(paths: list[Path] | None = None) -> None:
             raise SystemExit(1) from exc
 
 
-def backup_databases(data_dir: Path = Path("data"), backup_dir: Path = Path("backups"), keep: int | None = None) -> list[Path]:
+def backup_databases(
+    data_dir: Path = Path("data"), backup_dir: Path | None = None, keep: int | None = None
+) -> list[Path]:
     keep = keep if keep is not None else int(os.getenv("DEPRECIO_BACKUP_KEEP", "5"))
     if keep < 1:
         raise ValueError("DEPRECIO_BACKUP_KEEP must be positive")
+    backup_dir = backup_dir or backup_directory()
     backup_dir.mkdir(parents=True, exist_ok=True)
     created: list[Path] = []
     stamp = f"{time.strftime('%Y%m%d-%H%M%S')}-{time.time_ns() % 1_000_000_000:09d}"

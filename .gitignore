@@ -36,6 +36,7 @@ env/
 *.sqlite3
 *.db
 .cache/
+.state/
 backups/
 htmlcov/
 .pytest_cache/

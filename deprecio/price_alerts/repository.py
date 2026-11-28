@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
+from deprecio.paths import state_database_path
 from .models import PriceAlert
 
 
@@ -14,10 +15,10 @@ class PriceAlertLimitError(ValueError):
 
 
 class SQLitePriceAlertRepository:
-    def __init__(self, database_path: str | Path = "data/price_alerts.db", max_per_user: int = 20) -> None:
+    def __init__(self, database_path: str | Path | None = None, max_per_user: int = 20) -> None:
         if max_per_user < 1:
             raise ValueError("max_per_user must be positive")
-        self.database_path = Path(database_path)
+        self.database_path = Path(database_path) if database_path else state_database_path("price_alerts.db")
         self.max_per_user = max_per_user
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.database_path) as connection:

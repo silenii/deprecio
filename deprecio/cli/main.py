@@ -99,8 +99,9 @@ async def _send_telegram_event(token: str, event) -> None:
         response.raise_for_status()
 
 
-async def _check_alerts(database: Path, dry_run: bool, timeout: float) -> None:
-    service = PriceAlertService(SQLitePriceAlertRepository(database), CachedSpecsProvider())
+async def _check_alerts(database: Path | None, dry_run: bool, timeout: float) -> None:
+    repository = SQLitePriceAlertRepository(database)
+    service = PriceAlertService(repository, CachedSpecsProvider())
     events = await asyncio.wait_for(service.check(), timeout=timeout)
     metrics.alerts_triggered += len(events)
     token = os.getenv("DEPRECIO_BOT_TOKEN", "").strip()
@@ -116,11 +117,12 @@ async def _check_alerts(database: Path, dry_run: bool, timeout: float) -> None:
         typer.echo(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         if token and not dry_run:
             await asyncio.wait_for(_send_telegram_event(token, event), timeout=timeout)
+            repository.mark_checked(repository.get(event.user_id, event.model_id), event.current_price_rub, True)
 
 
 @app.command("check-alerts")
 def check_alerts(
-    database: Path = typer.Option(Path("data/price_alerts.db")),
+    database: Path | None = typer.Option(None),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Check price alerts once, optionally notifying Telegram."""
@@ -136,7 +138,7 @@ def check_alerts(
 
 
 @app.command("price-alerts-check", hidden=True)
-def price_alerts_check(database: Path = typer.Option(Path("data/price_alerts.db"))) -> None:
+def price_alerts_check(database: Path | None = typer.Option(None)) -> None:
     """Compatibility alias for check-alerts."""
     check_alerts(database=database)
 
@@ -159,13 +161,14 @@ def harvest_snapshot(
     model_id: str = typer.Option(..., "--model-id"),
     source: str = typer.Option("avito", "--source"),
     catalog: Path = typer.Option(Path("data/catalog.json")),
-    database: Path = typer.Option(Path("data/price_history.db")),
+    database: Path | None = typer.Option(None),
 ) -> None:
     """Collect and save one market snapshot."""
     provider = CachedSpecsProvider(catalog_file=catalog)
     try:
         device = provider.get_device(model_id)
-        asyncio.run(_harvest_device(provider, device, source, SQLitePriceHistoryRepository(database)))
+        repository = SQLitePriceHistoryRepository(database)
+        asyncio.run(_harvest_device(provider, device, source, repository))
     except Exception as exc:
         typer.echo(f"Ошибка {model_id}: {exc}")
         raise typer.Exit(code=1) from exc
@@ -176,7 +179,7 @@ def harvest_snapshot(
 def harvest_all(
     source: str = typer.Option("avito", "--source"),
     catalog: Path = typer.Option(Path("data/catalog.json")),
-    database: Path = typer.Option(Path("data/price_history.db")),
+    database: Path | None = typer.Option(None),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Collect and save snapshots for every catalog device."""
