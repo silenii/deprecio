@@ -133,7 +133,7 @@ async function showDevice(id, updateUrl = true) {
       }
     } catch { marketUnavailable = true; }
     renderDevice(device, analytics, forecast, history, marketUnavailable);
-    $('device-section').scrollIntoView({ behavior: 'smooth' });
+    $('device-section').scrollIntoView();
   } catch (error) {
     $('device-error').textContent = error.message;
     $('device-error').hidden = false;
