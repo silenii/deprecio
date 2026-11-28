@@ -1,16 +1,19 @@
 """HTTP scraper for real Avito smartphone listings."""
 
 import logging
+import asyncio
 import re
 from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
 
+from deprecio.bot.config import ScraperSettings
 from deprecio.cleaner.rules import detect_edition_from_text
 from deprecio.core.fuzzy_search import calculate_match_score
 from deprecio.models.listing import ItemCondition, MarketPlatform, SecondaryListing
 from deprecio.providers.exceptions import MarketDataUnavailableError
+from deprecio.harvester.source_state import reserve_request_slot
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +116,15 @@ class AvitoScraper:
 
         params = {"query": model_name, "category_id": 17, "localPriority": 0}
         listings: list[dict] = []
+        requests_per_minute = ScraperSettings().avito_rate_limit_rpm
         try:
             async with httpx.AsyncClient(
                 headers=self.HEADERS, timeout=timeout_sec, follow_redirects=True
             ) as client:
                 for page in range(1, max_pages + 1):
+                    delay = await asyncio.to_thread(reserve_request_slot, requests_per_minute)
+                    if delay:
+                        await asyncio.sleep(delay)
                     response = await client.get(self.SEARCH_URL, params={**params, "page": page})
                     if response.status_code != 200:
                         raise MarketDataUnavailableError(f"Avito search returned HTTP {response.status_code}")

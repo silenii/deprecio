@@ -16,6 +16,10 @@ def backup_directory() -> Path:
     return Path(os.getenv("DEPRECIO_BACKUP_DIR", "backups"))
 
 
+def snapshot_directory() -> Path:
+    return Path(os.getenv("SNAPSHOT_DIR", ".cache/snapshots"))
+
+
 def state_database_path(name: str) -> Path:
     if Path(name).name != name:
         raise ValueError("database name must be a filename")

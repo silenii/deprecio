@@ -19,7 +19,7 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
 logger = logging.getLogger("deprecio.production")
-STATE_DATABASE_NAMES = ("price_history.db", "favorites.db", "price_alerts.db")
+STATE_DATABASE_NAMES = ("price_history.db", "favorites.db", "price_alerts.db", "market_source_state.db")
 
 
 class Metrics:

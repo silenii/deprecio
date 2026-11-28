@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from deprecio.models.device import Device, EditionType
 from deprecio.models.listing import ItemCondition, ListingBundle, MarketPlatform, SecondaryListing
+from deprecio.paths import snapshot_directory
 
 CITIES = [
     "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
@@ -22,6 +23,15 @@ US_KEYWORDS = ["USA", "Американец", "eSIM only", "LL/A"]
 
 class SnapshotGenerator:
     """Генератор реалистичных снапшотов объявлений Авито для аналитики вторичного рынка."""
+
+    @staticmethod
+    def _snapshot_path(model_id: str, base_dir: Optional[Path] = None) -> Path:
+        directory = base_dir or snapshot_directory()
+        path = directory / f"{model_id}.json"
+        legacy_path = Path("data/snapshots") / f"{model_id}.json"
+        if base_dir is None and not path.exists() and legacy_path.exists():
+            return legacy_path
+        return path
 
     @classmethod
     def generate_listings(cls, device: Device, count: int = 35) -> List[SecondaryListing]:
@@ -165,7 +175,7 @@ class SnapshotGenerator:
         base_dir: Optional[Path] = None,
     ) -> Path:
         """Сохраняет снапшот объявлений в формате JSON."""
-        save_dir = base_dir or Path("data/snapshots")
+        save_dir = base_dir or snapshot_directory()
         save_dir.mkdir(parents=True, exist_ok=True)
         file_path = save_dir / f"{device.model_id}.json"
 
@@ -182,8 +192,7 @@ class SnapshotGenerator:
         base_dir: Optional[Path] = None,
     ) -> Optional[List[SecondaryListing]]:
         """Загружает существующий снапшот объявлений по model_id."""
-        save_dir = base_dir or Path("data/snapshots")
-        file_path = save_dir / f"{model_id}.json"
+        file_path = cls._snapshot_path(model_id, base_dir)
         if not file_path.exists():
             return None
 
@@ -211,9 +220,8 @@ class SnapshotGenerator:
         """Возвращает True если снапшот существует и свежее ttl_hours."""
         from datetime import datetime, timedelta
 
-        save_dir = base_dir or Path("data/snapshots")
-        file_path = save_dir / f"{model_id}.json"
-        if not file_path.exists() or cls.load_snapshot(model_id, base_dir=save_dir) is None:
+        file_path = cls._snapshot_path(model_id, base_dir)
+        if not file_path.exists() or cls.load_snapshot(model_id, base_dir=base_dir) is None:
             return False
         age = datetime.now() - datetime.fromtimestamp(file_path.stat().st_mtime)
         return age < timedelta(hours=ttl_hours)

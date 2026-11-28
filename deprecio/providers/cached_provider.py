@@ -12,7 +12,7 @@ from deprecio.bot.config import BotConfig
 from deprecio.core.fuzzy_search import calculate_match_score, fuzzy_search_devices, normalize_search_text
 from deprecio.models.device import Device
 from .base import BaseSpecsProvider
-from .exceptions import CatalogDataError, DeviceNotFoundError
+from .exceptions import CatalogDataError, DeviceNotFoundError, MarketDataUnavailableError
 from .gsmarena_client import GSMArenaClient
 from .gsmarena_parser import GSMArenaParser
 
@@ -131,6 +131,13 @@ class CachedSpecsProvider(BaseSpecsProvider):
     async def get_market_stats(self, device: Device, refresh: bool = False):
         """Получает статистику рынка из Avito с многоуровневым кешированием."""
         from deprecio.harvester import MarketAggregator, SnapshotGenerator
+        from deprecio.harvester.source_state import (
+            EMPTY_RESULT_TTL_SEC,
+            UNAVAILABLE_TTL_SEC,
+            cache_market_status,
+            cached_market_status,
+            clear_market_status,
+        )
         from deprecio.price_history.repository import SQLitePriceHistoryRepository
 
         history = SQLitePriceHistoryRepository()
@@ -141,24 +148,42 @@ class CachedSpecsProvider(BaseSpecsProvider):
                 MarketAggregator.persist_market_data(stats, "avito", history)
             return stats
 
-        if not refresh and device.model_id in self._market_stats_cache:
-            return self._market_stats_cache[device.model_id]
-
         ttl = getattr(self, "_config", None)
         ttl_hours = ttl.snapshot_ttl_hours if ttl else 24
-        if not refresh and SnapshotGenerator.is_snapshot_fresh(device.model_id, ttl_hours):
+        snapshot_is_fresh = not refresh and SnapshotGenerator.is_snapshot_fresh(device.model_id, ttl_hours)
+        if snapshot_is_fresh and device.model_id in self._market_stats_cache:
+            return self._market_stats_cache[device.model_id]
+        self._market_stats_cache.pop(device.model_id, None)
+
+        if snapshot_is_fresh:
             cached = SnapshotGenerator.load_snapshot(device.model_id)
-            if cached:
+            if cached is not None:
                 stats = aggregate_and_save(cached)
                 self._market_stats_cache[device.model_id] = stats
                 return stats
 
+        if not refresh:
+            status = cached_market_status(device.model_id)
+            if status == "empty":
+                stats = aggregate_and_save([])
+                self._market_stats_cache[device.model_id] = stats
+                return stats
+            if status == "unavailable":
+                raise MarketDataUnavailableError("Avito market data is temporarily unavailable")
+
         from deprecio.harvester.avito_scraper import AvitoScraper
 
         scraper = AvitoScraper()
-        listings = await scraper.fetch_and_convert(device.name, device.model_id)
+        try:
+            listings = await scraper.fetch_and_convert(device.name, device.model_id)
+        except MarketDataUnavailableError:
+            cache_market_status(device.model_id, "unavailable", UNAVAILABLE_TTL_SEC)
+            raise
         if listings:
             SnapshotGenerator.save_snapshot(device, listings)
+            clear_market_status(device.model_id)
+        else:
+            cache_market_status(device.model_id, "empty", EMPTY_RESULT_TTL_SEC)
         stats = aggregate_and_save(listings)
         self._market_stats_cache[device.model_id] = stats
         return stats
