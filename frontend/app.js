@@ -2,6 +2,14 @@ const API = '/api/v1';
 
 // Each row is a dated asking price for a used 128 GB device.
 const priceReferences = {
+  'apple-iphone-14-pro': [
+    { price: 30490, date: '08.11.2026', id: 'mf3me0' },
+    { price: 37990, date: '06.11.2026', id: 'd7ceka' }
+  ],
+  'apple-iphone-16-pro': [
+    { price: 48990, date: '08.11.2026', id: 'wo5pd8' },
+    { price: 49990, date: '04.11.2026', id: '1epitk' }
+  ],
   'apple-iphone-13': [
     { price: 27000, date: '25.11.2026', id: 'gqca3l' },
     { price: 15990, date: '04.11.2026', id: 'c60ppx' }
