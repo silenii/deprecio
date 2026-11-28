@@ -5,7 +5,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from deprecio.api.dependencies import get_specs_provider
+from deprecio.api.dependencies import get_specs_provider, get_store_offer_repository
+from deprecio.store_offers import SQLiteStoreOfferRepository
 from deprecio.api.models import (
     AnalogResponse,
     AnalyticsDeviceResponse,
@@ -141,3 +142,15 @@ async def market_card(model_id: str, provider: Provider) -> MarketCardResponse:
         market = MarketStatsResponse(median_price_rub=None, min_price_rub=None, p25_price_rub=None,
                                      p75_price_rub=None, max_price_rub=None, listings_count=0, updated_at=None)
     return MarketCardResponse(model_id=device.model_id, model_name=device.name, market_stats=market)
+
+
+@router.get("/devices/{model_id}/used-offers")
+def used_store_offers(
+    model_id: str,
+    provider: Provider,
+    repository: Annotated[SQLiteStoreOfferRepository, Depends(get_store_offer_repository)],
+) -> dict:
+    """Return current used-store offers separately from private-market statistics."""
+    device = _get_device(provider, model_id)
+    offers = repository.list(device.model_id)
+    return {"model_id": device.model_id, "source": "podlovi", "offers": [offer.model_dump(mode="json") for offer in offers]}

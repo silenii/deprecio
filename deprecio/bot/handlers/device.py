@@ -14,6 +14,7 @@ from deprecio.core import analyze_sweet_spot, calculate_residual_value, compare_
 from deprecio.models.device import Device, EditionType
 from deprecio.providers import CachedSpecsProvider
 from deprecio.favorites import SQLiteFavoritesRepository
+from deprecio.store_offers import SQLiteStoreOfferRepository
 from deprecio.core.analytics_defaults import device_msrp_rub
 from .safety import get_user_query, log_user_action
 
@@ -109,6 +110,14 @@ async def format_device_card(device: Device, catalog: CachedSpecsProvider) -> st
             lines.append(f"• Состояние не определено у {market_stats.unknown_condition_count} объявлений")
     else:
         lines.append("• Нет проверенных объявлений. Рыночная цена и прогноз временно недоступны.")
+
+    used_store_offers = SQLiteStoreOfferRepository().list(device.model_id)
+    if used_store_offers:
+        lines.extend(["", "🛍 **Подержанные предложения магазинов** *(отдельно от частного рынка)*:"])
+        lines.extend(
+            f"• {offer.merchant}: {offer.price_rub:,.0f} ₽ ({offer.memory_configuration or 'память не указана'})"
+            for offer in used_store_offers[:5]
+        )
 
     return "\n".join(lines)
 

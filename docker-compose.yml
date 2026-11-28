@@ -41,6 +41,22 @@ services:
       - deprecio-backups:/app/backups
       - ./data:/app/data:ro
 
+  used-offer-worker:
+    build:
+      context: .
+      target: runtime
+    command: ["python", "-m", "deprecio.cli.main", "used-offer-worker"]
+    environment:
+      DEPRECIO_STATE_DIR: /app/state
+      DEPRECIO_BACKUP_DIR: /app/backups
+      DEPRECIO_USED_OFFER_INTERVAL_SEC: ${DEPRECIO_USED_OFFER_INTERVAL_SEC:-86400}
+    restart: unless-stopped
+    volumes:
+      - deprecio-cache:/app/.cache/devices
+      - deprecio-state:/app/state
+      - deprecio-backups:/app/backups
+      - ./data:/app/data:ro
+
   # Опционально: HTTP API (uvicorn)
   api:
     build:

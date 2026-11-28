@@ -130,7 +130,25 @@ function renderReportControls(modelId) {
   return `<div class="report-controls"><label for="report-format">Формат отчёта</label><select id="report-format" aria-label="Формат отчёта"><option>json</option><option>csv</option><option>md</option><option>html</option></select><a class="secondary report-link" href="${reportUrl(modelId, 'json')}" download aria-label="Скачать отчёт устройства">Скачать отчёт</a></div>`;
 }
 
-function renderDevice(device, history) {
+function renderUsedStoreOffers(data) {
+  const offers = data.offers || [];
+  if (!offers.length) return '<section class="panel"><h3>Подержанные предложения магазинов</h3><p class="muted">Свежих предложений с подтверждённым статусом б/у пока нет. Каталог обновляется фоновым сборщиком.</p></section>';
+  const groups = new Map();
+  offers.forEach((offer) => {
+    const key = offer.memory_configuration || 'Память не указана';
+    groups.set(key, [...(groups.get(key) || []), offer]);
+  });
+  const summaries = [...groups].map(([memory, items]) => {
+    const stats = summarizeOffers(items);
+    return `<tr><td>${escapeHtml(memory)}</td><td>${items.length}</td><td>${money(stats.median)}</td><td>${money(stats.min)} – ${money(stats.max)}</td></tr>`;
+  }).join('');
+  const rows = offers.map((offer) => `<tr><td>${escapeHtml(offer.merchant)}</td><td>${escapeHtml(offer.memory_configuration || 'Не указана')}</td><td>${escapeHtml(offer.condition)}</td><td>${money(offer.price_rub)}</td><td><a href="${escapeHtml(offer.seller_url)}" target="_blank" rel="noopener noreferrer">Магазин</a> · <a href="${escapeHtml(offer.product_url)}" target="_blank" rel="noopener noreferrer">Podlovi</a></td></tr>`).join('');
+  const newest = offers.map((offer) => Date.parse(offer.observed_at)).filter(Number.isFinite).sort((a, b) => b - a)[0];
+  const updated = newest ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(newest)) : 'неизвестно';
+  return `<section class="panel"><h3>Подержанные предложения магазинов</h3><p class="muted">Предложения со статусом б/у по данным Podlovi. Это отдельная выборка магазинных товаров, она не входит в статистику частного вторичного рынка. Обновлено: ${escapeHtml(updated)}.</p><h4>Сводка по конфигурациям</h4><div class="table-scroll"><table class="comparison"><thead><tr><th>Память</th><th>Магазинов</th><th>Медиана</th><th>Диапазон</th></tr></thead><tbody>${summaries}</tbody></table></div><h4>Предложения</h4><div class="table-scroll"><table class="comparison"><thead><tr><th>Магазин</th><th>Память</th><th>Состояние</th><th>Цена</th><th>Ссылки</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+
+function renderDevice(device, history, usedOffers) {
   const offers = priceReferences[device.model_id] || [];
   const sample = summarizeOffers(offers);
   const msrp = device.editions?.flatMap((edition) => edition.memory_variants || [])
@@ -148,7 +166,7 @@ function renderDevice(device, history) {
     : '<p class="message">Для этой модели пока нет сохранённых предложений. Можно посмотреть характеристики и стартовую цену.</p>';
   const editions = (device.editions || []).flatMap((edition) => (edition.memory_variants || []).map((variant) => `<tr><td>${escapeHtml(editionName(edition.edition_type))}</td><td>${variant.ram_gb} / ${variant.storage_gb} ГБ</td><td>${number(variant.msrp_local)} ${escapeHtml(variant.currency)}</td><td>${edition.hardware?.has_nfc ? 'NFC' : 'Без NFC'} · ${escapeHtml(edition.hardware?.sim_slots || 'SIM не указаны')}</td></tr>`));
 
-  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>${offers.length > 1 ? "Медиана выборки" : "Цена предложения б/у"}</small><strong>${money(sample?.median)}</strong></div><div class="metric"><small>Диапазон цен</small><strong>${offers.length > 1 ? `${money(sample.min)} – ${money(sample.max)}` : "—"}</strong></div><div class="metric"><small>Объявлений</small><strong>${offers.length || "—"}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p><p class="muted">Для прогноза нужна выборка цен вторичного рынка.</p></div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
+  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>${offers.length > 1 ? "Медиана выборки" : "Цена предложения б/у"}</small><strong>${money(sample?.median)}</strong></div><div class="metric"><small>Диапазон цен</small><strong>${offers.length > 1 ? `${money(sample.min)} – ${money(sample.max)}` : "—"}</strong></div><div class="metric"><small>Объявлений</small><strong>${offers.length || "—"}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div>${renderUsedStoreOffers(usedOffers)}<div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p><p class="muted">Для прогноза нужна выборка цен вторичного рынка.</p></div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
   $('report-format').addEventListener('change', (event) => { $('device-content').querySelector('.report-link').href = reportUrl(device.model_id, event.target.value); });
 }
 
@@ -158,11 +176,12 @@ async function showDevice(id, updateUrl = true) {
   $('device-content').innerHTML = '<div class="message">Загрузка аналитики...</div>';
   $('device-error').hidden = true;
   try {
-    const [device, history] = await Promise.all([
+    const [device, history, usedOffers] = await Promise.all([
       api(`/devices/${encodeURIComponent(id)}`),
-      api(`/devices/${encodeURIComponent(id)}/price-history?limit=12`).catch(() => ({ chart: [] }))
+      api(`/devices/${encodeURIComponent(id)}/price-history?limit=12`).catch(() => ({ chart: [] })),
+      api(`/analytics/devices/${encodeURIComponent(id)}/used-offers`).catch(() => ({ offers: [] }))
     ]);
-    renderDevice(device, history);
+    renderDevice(device, history, usedOffers);
     $('device-section').scrollIntoView();
   } catch (error) {
     $('device-error').textContent = error.message;

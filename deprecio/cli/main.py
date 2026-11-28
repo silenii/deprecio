@@ -17,6 +17,7 @@ from deprecio.reports import ReportService
 from deprecio.catalog_import import import_catalog
 from deprecio.harvester import MarketAggregator
 from deprecio.price_history.repository import SQLitePriceHistoryRepository
+from deprecio.store_offers import SQLiteStoreOfferRepository
 from deprecio.production import backup_databases, metrics
 
 
@@ -130,6 +131,48 @@ async def _run_alert_worker(interval_sec: int, timeout_sec: float) -> None:
         except Exception:
             logger.exception("price_alert_worker_check_failed")
         await asyncio.sleep(interval_sec)
+
+
+async def _run_used_offer_harvest() -> dict:
+    from deprecio.harvester.podlovi import harvest_podlovi
+
+    provider = CachedSpecsProvider()
+    return await harvest_podlovi(provider.search_devices(""), SQLiteStoreOfferRepository())
+
+
+async def _run_used_offer_worker(interval_sec: int) -> None:
+    while True:
+        try:
+            result = await _run_used_offer_harvest()
+            logger.info("used_store_offers_harvested source=podlovi result=%s", result)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("used_store_offers_harvest_failed source=podlovi")
+        await asyncio.sleep(interval_sec)
+
+
+@app.command("harvest-used-offers")
+def harvest_used_offers() -> None:
+    """Fetch current used-store offers from the public Podlovi catalog."""
+    try:
+        typer.echo(json.dumps(asyncio.run(_run_used_offer_harvest()), ensure_ascii=False))
+    except Exception as exc:
+        logger.exception("used_store_offers_harvest_failed source=podlovi")
+        raise typer.Exit(code=1) from exc
+
+
+@app.command("used-offer-worker")
+def used_offer_worker() -> None:
+    """Refresh used-store offers once a day for deployments that keep this process alive."""
+    interval = int(os.getenv("DEPRECIO_USED_OFFER_INTERVAL_SEC", "86400"))
+    if interval < 3600:
+        raise typer.BadParameter("DEPRECIO_USED_OFFER_INTERVAL_SEC must be at least one hour")
+    typer.echo(f"Used offer worker started (interval={interval}s)")
+    try:
+        asyncio.run(_run_used_offer_worker(interval))
+    except KeyboardInterrupt:
+        typer.echo("Used offer worker stopped")
 
 
 @app.command("check-alerts")
