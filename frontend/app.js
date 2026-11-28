@@ -1,14 +1,34 @@
 const API = '/api/v1';
 
+// Each row is a dated asking price for a used 128 GB device.
 const priceReferences = {
-  'apple-iphone-15': {
-    price: 29990,
-    storage: 128,
-    date: '26.11.2026',
-    note: 'Цена при оплате наличными',
-    source: 'https://stok.io/o/fgp5pm'
-  }
+  'apple-iphone-13': [
+    { price: 27000, date: '25.11.2026', id: 'gqca3l' },
+    { price: 15990, date: '04.11.2026', id: 'c60ppx' }
+  ],
+  'apple-iphone-14': [
+    { price: 18990, date: '06.11.2026', id: 'bwy8vu' }
+  ],
+  'apple-iphone-15': [
+    { price: 29990, date: '26.11.2026', id: 'fgp5pm', note: 'при оплате наличными' },
+    { price: 29990, date: '23.11.2026', id: 'xf5m7o', note: 'при оплате наличными' }
+  ],
+  'apple-iphone-15-pro': [
+    { price: 35490, date: '08.11.2026', id: '1alfp9' },
+    { price: 49990, date: '28.10.2026', id: 'neif0m' }
+  ]
 };
+
+function summarizeOffers(offers) {
+  const prices = offers.map(({ price }) => price).sort((a, b) => a - b);
+  if (!prices.length) return null;
+  const middle = Math.floor(prices.length / 2);
+  return {
+    min: prices[0],
+    max: prices.at(-1),
+    median: (prices[middle] + prices[Math.floor((prices.length - 1) / 2)]) / 2
+  };
+}
 
 function $(id) { return document.getElementById(id); }
 
@@ -106,7 +126,8 @@ function renderReportControls(modelId) {
 }
 
 function renderDevice(device, history) {
-  const reference = priceReferences[device.model_id];
+  const offers = priceReferences[device.model_id] || [];
+  const sample = summarizeOffers(offers);
   const msrp = device.editions?.flatMap((edition) => edition.memory_variants || [])
     .find((variant) => variant.currency === 'RUB')?.msrp_local;
   const points = (history.chart || []).map((point) => point.price_rub).filter(Number.isFinite);
@@ -115,12 +136,14 @@ function renderDevice(device, history) {
   const poly = points.map((value, index) => `${index * (100 / Math.max(points.length - 1, 1))},${170 - ((value - min) / Math.max(max - min, 1)) * 150}`).join(' ');
   $('device-title').textContent = device.name;
   const qualityNote = device.estimated_fields?.length ? '<p class="message">Часть характеристик и MSRP оценочные, а не подтверждённые источником.</p>' : '';
-  const marketNote = reference
-    ? `<p class="message">Цена одного предложения б/у, ${reference.storage} ГБ, на ${reference.date}. ${reference.note}. <a href="${reference.source}">Объявление на Stok</a> · <a href="https://stok.io/apple/ru/iphone/15/128gb">Другие предложения</a></p>`
+  const marketNote = sample
+    ? `<div class="message">Небольшая историческая выборка объявлений, 128 ГБ. Цены продавцов на указанные даты.<ul>${offers.map(({ price, date, id, note }) =>
+      `<li><a href="https://stok.io/o/${id}">${money(price)} · ${date}</a>${note ? ` · ${note}` : ''}</li>`
+    ).join('')}</ul></div>`
     : '<p class="message">Для этой модели пока нет сохранённых предложений. Можно посмотреть характеристики и стартовую цену.</p>';
   const editions = (device.editions || []).flatMap((edition) => (edition.memory_variants || []).map((variant) => `<tr><td>${escapeHtml(editionName(edition.edition_type))}</td><td>${variant.ram_gb} / ${variant.storage_gb} ГБ</td><td>${number(variant.msrp_local)} ${escapeHtml(variant.currency)}</td><td>${edition.hardware?.has_nfc ? 'NFC' : 'Без NFC'} · ${escapeHtml(edition.hardware?.sim_slots || 'SIM не указаны')}</td></tr>`));
 
-  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>Цена предложения б/у</small><strong>${money(reference?.price)}</strong></div><div class="metric"><small>Остаточная стоимость</small><strong>—</strong></div><div class="metric"><small>Объявлений</small><strong>${reference ? '1' : '—'}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p><p class="muted">Для прогноза нужна выборка цен вторичного рынка.</p></div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
+  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>${offers.length > 1 ? "Медиана выборки" : "Цена предложения б/у"}</small><strong>${money(sample?.median)}</strong></div><div class="metric"><small>Диапазон цен</small><strong>${offers.length > 1 ? `${money(sample.min)} – ${money(sample.max)}` : "—"}</strong></div><div class="metric"><small>Объявлений</small><strong>${offers.length || "—"}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p><p class="muted">Для прогноза нужна выборка цен вторичного рынка.</p></div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
   $('report-format').addEventListener('change', (event) => { $('device-content').querySelector('.report-link').href = reportUrl(device.model_id, event.target.value); });
 }
 
