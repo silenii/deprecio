@@ -8,7 +8,7 @@ import pytest
 
 from deprecio.harvester.avito_scraper import AvitoScraper
 from deprecio.providers.cached_provider import CachedSpecsProvider
-from deprecio.providers.exceptions import CatalogDataError
+from deprecio.providers.exceptions import CatalogDataError, MarketDataUnavailableError
 from deprecio.providers.gsmarena_client import GSMArenaClient
 from deprecio.providers.price_lookup import MsrpLookup
 
@@ -34,14 +34,15 @@ async def test_price_lookup_invalid_json_returns_none(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_avito_invalid_payload_returns_empty_list(monkeypatch):
+async def test_avito_invalid_payload_is_reported_as_unavailable(monkeypatch):
     response = httpx.Response(200, text=json.dumps({"items": "invalid"}))
 
     async def invalid_payload(*args, **kwargs):
         return response
 
     monkeypatch.setattr(httpx.AsyncClient, "get", invalid_payload)
-    assert await AvitoScraper().fetch_listings("Pixel 9") == []
+    with pytest.raises(MarketDataUnavailableError):
+        await AvitoScraper().fetch_listings("Pixel 9")
 
 
 def test_corrupted_cache_is_reported_before_external_fallback(tmp_path: Path):

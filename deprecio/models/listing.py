@@ -17,6 +17,7 @@ class MarketPlatform(str, Enum):
 
 class ItemCondition(str, Enum):
     """Состояние устройства по градации вторичного рынка."""
+    UNKNOWN = "UNKNOWN"
     NEW_SEALED = "NEW_SEALED"         # Новый, не вскрывался (запечатанная заводская пломба)
     LIKE_NEW = "LIKE_NEW"             # Идеальное / Как новый (в пленках, без следов)
     EXCELLENT = "EXCELLENT"           # Отличное (микроцарапины без сколов)
@@ -47,7 +48,7 @@ class SecondaryListing(BaseModel):
     detected_edition: Optional[EditionType] = Field(None, description="Распознанная версия (CN, EAC, US и др.)")
     ram_gb: Optional[int] = Field(None, description="Оперативная память")
     storage_gb: Optional[int] = Field(None, description="Накопитель")
-    condition: ItemCondition = Field(ItemCondition.GOOD, description="Определенное состояние лота")
+    condition: ItemCondition = Field(ItemCondition.UNKNOWN, description="Определенное состояние лота")
     bundle: ListingBundle = Field(default_factory=ListingBundle)
     battery_health_percent: Optional[int] = Field(None, description="Остаточная емкость АКБ (%)")
 

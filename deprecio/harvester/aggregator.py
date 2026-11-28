@@ -39,6 +39,24 @@ class MarketAggregator:
             item.condition in (ItemCondition.DEFECTIVE, ItemCondition.FOR_PARTS)
             for item in classified_listings
         )
+        unknown_condition_count = sum(item.condition == ItemCondition.UNKNOWN for item in classified_listings)
+
+        # Keep the most common explicit memory configuration as the price basis.
+        # Unclassified listings are not mixed into a memory-specific median.
+        memory_counts: Dict[tuple[int, int], int] = {}
+        for item in classified_listings:
+            if (item.condition not in (ItemCondition.DEFECTIVE, ItemCondition.FOR_PARTS)
+                    and item.ram_gb and item.storage_gb):
+                key = (item.ram_gb, item.storage_gb)
+                memory_counts[key] = memory_counts.get(key, 0) + 1
+        memory_configuration = None
+        if memory_counts:
+            selected_memory = max(memory_counts, key=memory_counts.get)
+            classified_listings = [
+                item for item in classified_listings
+                if (item.ram_gb, item.storage_gb) == selected_memory
+            ]
+            memory_configuration = f"{selected_memory[0]}/{selected_memory[1]} ГБ"
 
         # 2. IQR фильтрация аномальных цен
         valid_listings, outliers = ListingSanitizer.filter_price_outliers_iqr(classified_listings)
@@ -55,6 +73,8 @@ class MarketAggregator:
                 total_raw_listings=total_raw,
                 defective_count=defective_count,
                 outliers_count=outliers_count,
+                unknown_condition_count=unknown_condition_count,
+                memory_configuration=memory_configuration,
                 updated_at=date.today(),
             )
 
@@ -118,6 +138,8 @@ class MarketAggregator:
             clean_listings_count=len(valid_listings),
             defective_count=defective_count,
             outliers_count=max(0, outliers_count),
+            unknown_condition_count=unknown_condition_count,
+            memory_configuration=memory_configuration,
             min_price_rub=round(min_price / 100) * 100,
             p25_price_rub=round(p25_price / 100) * 100,
             median_price_rub=round(median_price / 100) * 100,

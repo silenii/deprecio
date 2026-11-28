@@ -98,6 +98,15 @@ async def format_device_card(device: Device, catalog: CachedSpecsProvider) -> st
             "",
             f"💡 **Вердикт Deprecio:**\n{analysis.advice_buyer}",
         ])
+        if market_stats.memory_configuration:
+            lines.append(f"• **Основная конфигурация:** {market_stats.memory_configuration}")
+        if market_stats.condition_medians:
+            conditions = ", ".join(
+                f"{condition}: {price:,.0f} ₽" for condition, price in market_stats.condition_medians.items()
+            )
+            lines.append(f"• **Медианы по состоянию:** {conditions}")
+        if market_stats.unknown_condition_count:
+            lines.append(f"• Состояние не определено у {market_stats.unknown_condition_count} объявлений")
     else:
         lines.append("• Нет проверенных объявлений. Рыночная цена и прогноз временно недоступны.")
 
@@ -187,6 +196,7 @@ async def handle_forecast_callback(callback: CallbackQuery, catalog: CachedSpecs
         f"• Темп амортизации бренда: **{report.monthly_decay_rate * 100:.1f}% в месяц**",
         f"• Точка входа в Sweet Spot: **через {report.sweet_spot_month} мес.**\n",
         "📉 **Прогнозируемый график снижения цен:**",
+        "⚠️ Оценочный сценарий по профилю бренда, не прогноз обученной модели.",
     ]
 
     for p in report.points:

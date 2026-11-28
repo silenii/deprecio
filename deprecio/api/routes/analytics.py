@@ -41,6 +41,9 @@ async def _market(provider: BaseSpecsProvider, device: Device) -> MarketStatsRes
         p75_price_rub=stats.p75_price_rub if count else None,
         max_price_rub=stats.max_price_rub if count else None,
         listings_count=count,
+        unknown_condition_count=getattr(stats, "unknown_condition_count", 0),
+        memory_configuration=getattr(stats, "memory_configuration", None),
+        condition_medians=getattr(stats, "condition_medians", {}),
         updated_at=stats.updated_at,
     )
 
@@ -65,6 +68,7 @@ async def _device_response(provider: BaseSpecsProvider, device: Device) -> Analy
         residual_value_percent=calculate_residual_value(current, msrp) if current is not None else None,
         depreciation_drop_percent=calculate_depreciation_drop(current, msrp) if current is not None else None,
         forecast_summary=forecast_summary,
+        forecast_is_heuristic=forecast_summary is not None,
         market_stats=market,
     )
 
@@ -99,13 +103,34 @@ async def find_analogs(
         raise HTTPException(status_code=400, detail="budget_min_rub не может быть больше budget_max_rub")
     target_tier = tier or source.lineage.tier
     candidates = [device for device in provider.search_devices("") if device.lineage.tier.lower() == target_tier.lower()]
-    price_target = budget_max_rub or budget_min_rub
-    analogs = provider.filter_analogs(source, candidates, price_target, 1.0) if price_target is not None else [
-        device for device in candidates if device.model_id != source.model_id
-    ]
-    if budget_min_rub is not None:
-        analogs = [device for device in analogs if device_msrp_rub(device) >= budget_min_rub]
-    return AnalogResponse(source_model_id=model_id, results=[await _device_response(provider, device) for device in analogs[:limit]], total=min(len(analogs), limit))
+    candidates = [device for device in candidates if device.model_id != source.model_id]
+    responses: list[AnalyticsDeviceResponse] = []
+    if budget_min_rub is None and budget_max_rub is None:
+        responses = [await _device_response(provider, device) for device in candidates[:limit]]
+    else:
+        # Budget searches use only fresh snapshots, so one request cannot trigger
+        # a fan-out of external marketplace scraping across the whole catalog.
+        getter = getattr(provider, "get_cached_market_stats", None)
+        if getter is None:
+            getter = getattr(provider, "get_market_stats", None)
+        for device in candidates:
+            if getter is None:
+                break
+            stats = getter(device)
+            if inspect.isawaitable(stats):
+                stats = await stats
+            price = getattr(stats, "median_price_rub", 0) if stats else 0
+            count = getattr(stats, "clean_listings_count", 0) if stats else 0
+            if not count or not price:
+                continue
+            if budget_min_rub is not None and price < budget_min_rub:
+                continue
+            if budget_max_rub is not None and price > budget_max_rub:
+                continue
+            responses.append(await _device_response(provider, device))
+            if len(responses) >= limit:
+                break
+    return AnalogResponse(source_model_id=model_id, results=responses, total=len(responses))
 
 
 @router.get("/devices/{model_id}/market", response_model=MarketCardResponse)

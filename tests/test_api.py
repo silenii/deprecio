@@ -41,6 +41,26 @@ class FakeProvider:
         return [self.device] if query.lower() in self.device.name.lower() else []
 
 
+class MarketProvider(FakeProvider):
+    def __init__(self, devices, prices):
+        self.devices = {device.model_id: device for device in devices}
+        self.device = devices[0]
+        self.prices = prices
+
+    def search_devices(self, query):
+        return list(self.devices.values())
+
+    def get_device(self, model_id):
+        return self.devices[model_id]
+
+    async def get_market_stats(self, device):
+        from deprecio.harvester.models import MarketStats
+
+        price = self.prices.get(device.model_id)
+        return MarketStats(model_id=device.model_id, model_name=device.name,
+                           median_price_rub=price or 0, clean_listings_count=1 if price else 0)
+
+
 def test_device_search_and_card(sample_device):
     app.dependency_overrides[get_specs_provider] = lambda: FakeProvider(sample_device)
     try:
@@ -65,6 +85,7 @@ def test_forecast_endpoint(sample_device):
         assert response.status_code == 200
         assert len(response.json()["points"]) == 2
         assert response.json()["points"][0]["predicted_rv_percent"] < 100
+        assert response.json()["is_heuristic"] is True
     finally:
         app.dependency_overrides.clear()
 
@@ -207,8 +228,42 @@ def test_market_card_returns_empty_market_data(sample_device):
             "p75_price_rub": None,
             "max_price_rub": None,
             "listings_count": 0,
+            "unknown_condition_count": 0,
+            "memory_configuration": None,
+            "condition_medians": {},
             "updated_at": None,
         }
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_market_source_failure_returns_503_instead_of_zero_market(sample_device):
+    from deprecio.providers.exceptions import MarketDataUnavailableError
+
+    class UnavailableProvider(FakeProvider):
+        async def get_market_stats(self, device):
+            raise MarketDataUnavailableError("blocked")
+
+    app.dependency_overrides[get_specs_provider] = lambda: UnavailableProvider(sample_device)
+    try:
+        response = TestClient(app).get("/api/v1/analytics/devices/xiaomi-14/market")
+        assert response.status_code == 503
+        assert response.json()["code"] == "market_source_unavailable"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_analog_budget_uses_current_used_market_price(sample_device):
+    candidate = sample_device.model_copy(update={"model_id": "candidate", "name": "Candidate 14"})
+    app.dependency_overrides[get_specs_provider] = lambda: MarketProvider(
+        [sample_device, candidate], {"xiaomi-14": 80000, "candidate": 60000}
+    )
+    try:
+        response = TestClient(app).get(
+            "/api/v1/analytics/analogs/xiaomi-14", params={"budget_min_rub": 70000, "budget_max_rub": 90000}
+        )
+        assert response.status_code == 200
+        assert response.json()["results"] == []
     finally:
         app.dependency_overrides.clear()
 

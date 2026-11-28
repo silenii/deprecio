@@ -1,8 +1,11 @@
-export type MarketStats = { listings_count: number; median_price_rub: number | null };
+export type MarketStats = {
+  listings_count: number; median_price_rub: number | null; unknown_condition_count?: number;
+  memory_configuration?: string | null; condition_medians?: Record<string, number>;
+};
 export type Device = {
   model_id: string; name: string; brand: string; tier: string; msrp_rub: number;
   current_price_rub: number | null; residual_value_percent: number | null;
-  depreciation_drop_percent: number | null; forecast_summary: string | null;
+  depreciation_drop_percent: number | null; forecast_summary: string | null; forecast_is_heuristic?: boolean;
   market_stats: MarketStats | null; estimated_fields?: string[]; characteristics?: Record<string, unknown>;
 };
 

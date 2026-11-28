@@ -33,4 +33,4 @@ def get_forecast(
         report = generate_price_forecast(device, current_price_rub, months_horizon)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return ForecastResponse(**asdict(report))
+    return ForecastResponse(**asdict(report), is_heuristic=True)

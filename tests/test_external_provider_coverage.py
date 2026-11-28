@@ -12,6 +12,7 @@ from deprecio.providers.gsmarena_client import GSMArenaClient, GSMArenaSearchRes
 from deprecio.providers.nanoreview import ExternalSpecsAdapter
 from deprecio.providers.price_lookup import MsrpLookup
 from deprecio.harvester.avito_scraper import AvitoScraper
+from deprecio.models.listing import ItemCondition
 from deprecio.recommendations.service import RecommendationService
 
 
@@ -318,16 +319,19 @@ async def test_avito_success_and_empty_pages(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_avito_http_and_timeout_fallbacks(monkeypatch):
+    from deprecio.providers.exceptions import MarketDataUnavailableError
     _AsyncSession.response = _Response(status_code=500)
     monkeypatch.setattr("deprecio.harvester.avito_scraper.httpx.AsyncClient", _AsyncSession)
     scraper = AvitoScraper()
-    assert await scraper.fetch_listings("Phone") == []
+    with pytest.raises(MarketDataUnavailableError):
+        await scraper.fetch_listings("Phone")
 
     async def timeout(self, *args, **kwargs):
         raise httpx.ReadTimeout("timeout")
 
     monkeypatch.setattr(_AsyncSession, "get", timeout)
-    assert await scraper.fetch_listings("Phone") == []
+    with pytest.raises(MarketDataUnavailableError):
+        await scraper.fetch_listings("Phone")
 
 
 def test_avito_parsing_helpers():
@@ -335,6 +339,11 @@ def test_avito_parsing_helpers():
     assert AvitoScraper._price({"amount": "1 234"}) == 1234
     normalised = AvitoScraper._normalise_item({"itemId": 3, "description_text": "desc", "address": "Kazan"})
     assert normalised["id"] == "3"
+    assert AvitoScraper._memory("12/256 GB") == (12, 256)
+    assert AvitoScraper._memory("12 GB RAM, 256 GB") == (12, 256)
+    assert AvitoScraper._memory("8 GB RAM 1 TB") == (8, 1024)
+    assert AvitoScraper._condition("Хорошее состояние, есть следы эксплуатации") == ItemCondition.GOOD
+    assert AvitoScraper._condition("Продам смартфон") == ItemCondition.UNKNOWN
 
 
 def test_cached_provider_empty_and_missing_paths(tmp_path):

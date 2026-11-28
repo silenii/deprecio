@@ -26,6 +26,7 @@ class ForecastResponse(BaseModel):
     sweet_spot_month: int
     points: list[ForecastPoint]
     summary_verdict: str
+    is_heuristic: bool = True
 
 
 class ErrorResponse(BaseModel):
@@ -37,7 +38,7 @@ class ErrorResponse(BaseModel):
 
 
 class MarketStatsResponse(BaseModel):
-    """Public market snapshot; zero values mean that no listings were available."""
+    """Public market snapshot; missing prices indicate no usable listings."""
 
     median_price_rub: float | None
     min_price_rub: float | None
@@ -45,6 +46,9 @@ class MarketStatsResponse(BaseModel):
     p75_price_rub: float | None
     max_price_rub: float | None
     listings_count: int
+    unknown_condition_count: int = 0
+    memory_configuration: str | None = None
+    condition_medians: dict[str, float] = Field(default_factory=dict)
     updated_at: date | None
 
 
@@ -62,6 +66,7 @@ class AnalyticsDeviceResponse(BaseModel):
     residual_value_percent: float | None
     depreciation_drop_percent: float | None
     forecast_summary: str | None
+    forecast_is_heuristic: bool = True
     market_stats: MarketStatsResponse | None
 
 

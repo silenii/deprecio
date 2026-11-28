@@ -82,7 +82,8 @@ async def handle_new_releases(message: Message, catalog: CachedSpecsProvider) ->
             f"• Фаза: {phase}\n"
             f"• Войдёт в Sweet Spot через: ~{months_left} мес. (≈ {_month_label(sweet_point.target_date)})\n"
             f"• Текущая медиана Авито: ≈ {current_price:,.0f} ₽\n"
-            f"• Прогноз в Sweet Spot: ≈ {sweet_point.predicted_price_rub:,.0f} ₽ ({drop:+d}%)"
+            f"• Прогноз в Sweet Spot: ≈ {sweet_point.predicted_price_rub:,.0f} ₽ ({drop:+d}%)\n"
+            "• Оценочный сценарий по профилю бренда."
         )
 
     await message.answer("\n\n".join(blocks), reply_markup=get_back_keyboard(), parse_mode="Markdown")

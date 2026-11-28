@@ -166,6 +166,31 @@ def test_market_aggregator_same_prices_remain_valid(device):
     assert stats.median_price_rub == 25000
 
 
+def test_market_aggregator_uses_one_explicit_memory_configuration(device):
+    listings = [
+        SecondaryListing(listing_id="a", title="Xiaomi 14 8/128, хорошее состояние", price_rub=30000,
+                         ram_gb=8, storage_gb=128, condition=ItemCondition.GOOD),
+        SecondaryListing(listing_id="b", title="Xiaomi 14 12/256, хорошее состояние", price_rub=40000,
+                         ram_gb=12, storage_gb=256, condition=ItemCondition.GOOD),
+        SecondaryListing(listing_id="c", title="Xiaomi 14 12/256, хорошее состояние", price_rub=42000,
+                         ram_gb=12, storage_gb=256, condition=ItemCondition.GOOD),
+        SecondaryListing(listing_id="d", title="Xiaomi 14 12/256, хорошее состояние", price_rub=41000,
+                         ram_gb=12, storage_gb=256, condition=ItemCondition.GOOD),
+    ]
+
+    stats = MarketAggregator.aggregate_market_data(device, listings)
+
+    assert stats.memory_configuration == "12/256 ГБ"
+    assert stats.clean_listings_count == 3
+    assert stats.median_price_rub == 41000
+
+
+def test_listing_condition_defaults_to_unknown():
+    listing = SecondaryListing(listing_id="unknown", title="Xiaomi 14", price_rub=30000)
+
+    assert listing.condition == ItemCondition.UNKNOWN
+
+
 def test_edition_price_gap_cn_vs_eac(device):
     raw_listings = SnapshotGenerator.generate_listings(device, count=50)
     stats = MarketAggregator.aggregate_market_data(device, raw_listings)
@@ -229,4 +254,36 @@ def test_cached_specs_provider_does_not_invent_or_persist_listings(device, tmp_p
 
     cached_stats = asyncio.run(provider.get_market_stats(device))
     assert stats is cached_stats
+
+
+def test_cached_market_stats_does_not_fetch_when_snapshot_is_stale(device, tmp_path, monkeypatch):
+    import asyncio
+    from deprecio.harvester import SnapshotGenerator
+
+    provider = CachedSpecsProvider(cache_dir=tmp_path / "cache", global_db_file=tmp_path / "missing.db")
+    monkeypatch.setattr(SnapshotGenerator, "is_snapshot_fresh", lambda *args, **kwargs: False)
+
+    assert asyncio.run(provider.get_cached_market_stats(device)) is None
+
+
+def test_cached_market_stats_aggregates_fresh_snapshot(device, tmp_path, monkeypatch):
+    import asyncio
+    from deprecio.harvester import SnapshotGenerator
+    from deprecio.price_history.repository import SQLitePriceHistoryRepository
+
+    provider = CachedSpecsProvider(cache_dir=tmp_path / "cache", global_db_file=tmp_path / "missing.db")
+    listings = [
+        SecondaryListing(listing_id=str(index), title="Xiaomi 14 12/256", price_rub=40000 + index * 1000,
+                         ram_gb=12, storage_gb=256, condition=ItemCondition.GOOD)
+        for index in range(4)
+    ]
+    monkeypatch.setattr(SnapshotGenerator, "is_snapshot_fresh", lambda *args, **kwargs: True)
+    monkeypatch.setattr(SnapshotGenerator, "load_snapshot", lambda *args, **kwargs: listings)
+    monkeypatch.setattr("deprecio.price_history.repository.SQLitePriceHistoryRepository",
+                        lambda: SQLitePriceHistoryRepository(tmp_path / "history.db"))
+
+    stats = asyncio.run(provider.get_cached_market_stats(device))
+
+    assert stats.clean_listings_count == 4
+    assert stats.memory_configuration == "12/256 ГБ"
 

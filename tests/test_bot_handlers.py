@@ -7,7 +7,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.base import StorageKey
 
 from deprecio.bot.handlers.compare import _comparison, receive_second
-from deprecio.bot.handlers.device import handle_device_search
+from deprecio.bot.handlers.device import format_device_card, handle_device_search
+from deprecio.harvester.models import MarketStats
 
 
 def _message(text: str | None) -> SimpleNamespace:
@@ -43,6 +44,22 @@ def test_device_search_provider_error_does_not_escape():
 
     status.edit_text.assert_awaited_once()
     assert "Не удалось получить данные" in status.edit_text.await_args.args[0]
+
+
+def test_device_card_formats_real_market_statistics(sample_device):
+    class Catalog:
+        async def get_market_stats(self, _device):
+            return MarketStats(
+                model_id=sample_device.model_id, model_name=sample_device.name,
+                median_price_rub=65000, p25_price_rub=60000, p75_price_rub=70000,
+                clean_listings_count=8, defective_count=2, outliers_count=1,
+            )
+
+    text = asyncio.run(format_device_card(sample_device, Catalog()))
+
+    assert "Анализ вторичного рынка" in text
+    assert "65,000" in text
+    assert "8 шт." in text
 
 
 def test_compare_missing_device_is_reported_and_fsm_is_cleared():

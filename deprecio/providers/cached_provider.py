@@ -163,6 +163,26 @@ class CachedSpecsProvider(BaseSpecsProvider):
         self._market_stats_cache[device.model_id] = stats
         return stats
 
+    async def get_cached_market_stats(self, device: Device):
+        """Return only a fresh cached market snapshot without contacting Avito."""
+        from deprecio.harvester import MarketAggregator, SnapshotGenerator
+        from deprecio.price_history.repository import SQLitePriceHistoryRepository
+
+        ttl = getattr(self, "_config", None)
+        ttl_hours = ttl.snapshot_ttl_hours if ttl else 24
+        if not SnapshotGenerator.is_snapshot_fresh(device.model_id, ttl_hours):
+            return None
+        listings = SnapshotGenerator.load_snapshot(device.model_id)
+        if not listings:
+            return None
+        stats = MarketAggregator.aggregate_market_data(device, listings)
+        if stats.total_raw_listings:
+            MarketAggregator.persist_market_data(
+                stats, "avito", SQLitePriceHistoryRepository()
+            )
+        self._market_stats_cache[device.model_id] = stats
+        return stats
+
     def get_market_stats_sync(self, device: Device, refresh: bool = False):
         """Синхронная обертка для использования вне async-контекста."""
         return asyncio.run(self.get_market_stats(device, refresh=refresh))

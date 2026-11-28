@@ -28,6 +28,8 @@ class MarketStats(BaseModel):
     clean_listings_count: int = Field(0, description="После фильтрации IQR + дефектов")
     defective_count: int = Field(0, description="Отсеяно дефектных")
     outliers_count: int = Field(0, description="Отсеяно ценовых выбросов")
+    unknown_condition_count: int = Field(0, description="Объявления с нераспознанным состоянием")
+    memory_configuration: Optional[str] = Field(None, description="Конфигурация памяти основной выборки, если распознана")
 
     # Ценовой профиль (рубли)
     min_price_rub: float = 0.0
