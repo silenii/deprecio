@@ -7,6 +7,14 @@ function money(value) {
   return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value)} ₽`;
 }
 
+function number(value) {
+  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
+}
+
+function editionName(type) {
+  return ({ EAC_ROSTEST: 'РСТ / ЕАС', GLOBAL_EU: 'Глобальная (ЕС)', CN: 'Китайская', US: 'США', IN: 'Индия', OTHER: 'Другая' })[type] || type;
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -87,15 +95,20 @@ function renderReportControls(modelId) {
   return `<div class="report-controls"><label for="report-format">Формат отчёта</label><select id="report-format" aria-label="Формат отчёта"><option>json</option><option>csv</option><option>md</option><option>html</option></select><a class="secondary report-link" href="${reportUrl(modelId, 'json')}" download aria-label="Скачать отчёт устройства">Скачать отчёт</a></div>`;
 }
 
-function renderDevice(device, forecast, history) {
-  const stats = device.market_stats || {};
+function renderDevice(device, analytics, forecast, history, marketUnavailable) {
+  const stats = analytics?.market_stats || {};
+  const msrp = analytics?.msrp_rub ?? device.editions?.flatMap((edition) => edition.memory_variants || [])
+    .find((variant) => variant.currency === 'RUB')?.msrp_local;
   const points = (history.chart || []).map((point) => point.price_rub).filter(Number.isFinite);
   const max = Math.max(...points, 1);
   const min = Math.min(...points, max);
   const poly = points.map((value, index) => `${index * (100 / Math.max(points.length - 1, 1))},${170 - ((value - min) / Math.max(max - min, 1)) * 150}`).join(' ');
   $('device-title').textContent = device.name;
   const qualityNote = device.estimated_fields?.length ? '<p class="message">Часть характеристик и MSRP оценочные, а не подтверждённые источником.</p>' : '';
-  $('device-content').innerHTML = `${qualityNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.tier)} · ${escapeHtml(device.characteristics?.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>Текущая цена</small><strong>${money(device.current_price_rub)}</strong></div><div class="metric"><small>Остаточная стоимость</small><strong>${device.residual_value_percent == null ? 'Нет данных' : `${device.residual_value_percent.toFixed(1)}%`}</strong></div><div class="metric"><small>Объявлений</small><strong>${stats.listings_count || 0}</strong></div><div class="metric"><small>MSRP</small><strong>${money(device.msrp_rub)}${device.estimated_fields?.includes('msrp') ? ' (оценка)' : ''}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p>${forecast ? `<p>${escapeHtml(forecast.summary_verdict)}</p><p class="muted">Темп снижения: ${(forecast.monthly_decay_rate * 100).toFixed(1)}% в месяц. Оптимальный момент: ${forecast.sweet_spot_month} мес.</p>` : '<p class="muted">Недостаточно market data для прогноза.</p>'}</div></div>${renderReportControls(device.model_id)}`;
+  const marketNote = marketUnavailable ? '<p class="message error">Рыночные данные сейчас недоступны. Характеристики загружены из каталога.</p>' : '';
+  const editions = (device.editions || []).flatMap((edition) => (edition.memory_variants || []).map((variant) => `<tr><td>${escapeHtml(editionName(edition.edition_type))}</td><td>${variant.ram_gb} / ${variant.storage_gb} ГБ</td><td>${number(variant.msrp_local)} ${escapeHtml(variant.currency)}</td><td>${edition.hardware?.has_nfc ? 'NFC' : 'Без NFC'} · ${escapeHtml(edition.hardware?.sim_slots || 'SIM не указаны')}</td></tr>`));
+  const currentPrice = analytics?.current_price_rub;
+  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>Цена б/у</small><strong>${currentPrice == null ? 'Нет проверенных данных' : money(currentPrice)}</strong></div><div class="metric"><small>Остаточная стоимость</small><strong>${analytics?.residual_value_percent == null ? 'Нет данных' : `${analytics.residual_value_percent.toFixed(1)}%`}</strong></div><div class="metric"><small>Объявлений</small><strong>${stats.listings_count ?? '—'}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p>${forecast ? `<p>${escapeHtml(forecast.summary_verdict)}</p><p class="muted">Темп снижения: ${(forecast.monthly_decay_rate * 100).toFixed(1)}% в месяц. Оптимальный момент: ${forecast.sweet_spot_month} мес.</p>` : '<p class="muted">Появится, когда будут проверенные цены вторичного рынка.</p>'}</div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
   $('report-format').addEventListener('change', (event) => { $('device-content').querySelector('.report-link').href = reportUrl(device.model_id, event.target.value); });
 }
 
@@ -105,11 +118,21 @@ async function showDevice(id, updateUrl = true) {
   $('device-content').innerHTML = '<div class="message">Загрузка аналитики...</div>';
   $('device-error').hidden = true;
   try {
-    const data = await api(`/analytics/compare?model_ids=${encodeURIComponent(id)}&model_ids=${encodeURIComponent(id)}`);
-    const device = data.devices[0];
-    const forecast = device.current_price_rub == null ? null : await api(`/forecast/${encodeURIComponent(id)}?current_price_rub=${device.current_price_rub}&months_horizon=6`);
-    const history = await api(`/devices/${encodeURIComponent(id)}/price-history?limit=12`);
-    renderDevice(device, forecast, history);
+    const [device, history] = await Promise.all([
+      api(`/devices/${encodeURIComponent(id)}`),
+      api(`/devices/${encodeURIComponent(id)}/price-history?limit=12`).catch(() => ({ chart: [] }))
+    ]);
+    let analytics = null;
+    let forecast = null;
+    let marketUnavailable = false;
+    try {
+      const data = await api(`/analytics/compare?model_ids=${encodeURIComponent(id)}&model_ids=${encodeURIComponent(id)}`);
+      analytics = data.devices[0];
+      if (analytics.current_price_rub != null) {
+        forecast = await api(`/forecast/${encodeURIComponent(id)}?current_price_rub=${analytics.current_price_rub}&months_horizon=6`);
+      }
+    } catch { marketUnavailable = true; }
+    renderDevice(device, analytics, forecast, history, marketUnavailable);
     $('device-section').scrollIntoView({ behavior: 'smooth' });
   } catch (error) {
     $('device-error').textContent = error.message;
