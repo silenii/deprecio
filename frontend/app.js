@@ -1,5 +1,15 @@
 const API = '/api/v1';
 
+const priceReferences = {
+  'apple-iphone-15': {
+    price: 29990,
+    storage: 128,
+    date: '26.11.2026',
+    note: 'Цена при оплате наличными',
+    source: 'https://stok.io/o/fgp5pm'
+  }
+};
+
 function $(id) { return document.getElementById(id); }
 
 function money(value) {
@@ -95,9 +105,9 @@ function renderReportControls(modelId) {
   return `<div class="report-controls"><label for="report-format">Формат отчёта</label><select id="report-format" aria-label="Формат отчёта"><option>json</option><option>csv</option><option>md</option><option>html</option></select><a class="secondary report-link" href="${reportUrl(modelId, 'json')}" download aria-label="Скачать отчёт устройства">Скачать отчёт</a></div>`;
 }
 
-function renderDevice(device, analytics, forecast, history, marketUnavailable) {
-  const stats = analytics?.market_stats || {};
-  const msrp = analytics?.msrp_rub ?? device.editions?.flatMap((edition) => edition.memory_variants || [])
+function renderDevice(device, history) {
+  const reference = priceReferences[device.model_id];
+  const msrp = device.editions?.flatMap((edition) => edition.memory_variants || [])
     .find((variant) => variant.currency === 'RUB')?.msrp_local;
   const points = (history.chart || []).map((point) => point.price_rub).filter(Number.isFinite);
   const max = Math.max(...points, 1);
@@ -105,10 +115,12 @@ function renderDevice(device, analytics, forecast, history, marketUnavailable) {
   const poly = points.map((value, index) => `${index * (100 / Math.max(points.length - 1, 1))},${170 - ((value - min) / Math.max(max - min, 1)) * 150}`).join(' ');
   $('device-title').textContent = device.name;
   const qualityNote = device.estimated_fields?.length ? '<p class="message">Часть характеристик и MSRP оценочные, а не подтверждённые источником.</p>' : '';
-  const marketNote = marketUnavailable ? '<p class="message error">Рыночные данные сейчас недоступны. Характеристики загружены из каталога.</p>' : '';
+  const marketNote = reference
+    ? `<p class="message">Цена одного предложения б/у, ${reference.storage} ГБ, на ${reference.date}. ${reference.note}. <a href="${reference.source}">Объявление на Stok</a> · <a href="https://stok.io/apple/ru/iphone/15/128gb">Другие предложения</a></p>`
+    : '<p class="message">Для этой модели пока нет сохранённых предложений. Можно посмотреть характеристики и стартовую цену.</p>';
   const editions = (device.editions || []).flatMap((edition) => (edition.memory_variants || []).map((variant) => `<tr><td>${escapeHtml(editionName(edition.edition_type))}</td><td>${variant.ram_gb} / ${variant.storage_gb} ГБ</td><td>${number(variant.msrp_local)} ${escapeHtml(variant.currency)}</td><td>${edition.hardware?.has_nfc ? 'NFC' : 'Без NFC'} · ${escapeHtml(edition.hardware?.sim_slots || 'SIM не указаны')}</td></tr>`));
-  const currentPrice = analytics?.current_price_rub;
-  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>Цена б/у</small><strong>${currentPrice == null ? 'Нет проверенных данных' : money(currentPrice)}</strong></div><div class="metric"><small>Остаточная стоимость</small><strong>${analytics?.residual_value_percent == null ? 'Нет данных' : `${analytics.residual_value_percent.toFixed(1)}%`}</strong></div><div class="metric"><small>Объявлений</small><strong>${stats.listings_count ?? '—'}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p>${forecast ? `<p>${escapeHtml(forecast.summary_verdict)}</p><p class="muted">Темп снижения: ${(forecast.monthly_decay_rate * 100).toFixed(1)}% в месяц. Оптимальный момент: ${forecast.sweet_spot_month} мес.</p>` : '<p class="muted">Появится, когда будут проверенные цены вторичного рынка.</p>'}</div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
+
+  $('device-content').innerHTML = `${qualityNote}${marketNote}<div class="device-header"><div><h3>${escapeHtml(device.name)}</h3><span class="muted">${escapeHtml(device.brand)} · ${escapeHtml(device.lineage?.tier)} · ${escapeHtml(device.chipset)}</span></div><span class="muted">${escapeHtml(device.model_id)}</span></div><div class="metrics"><div class="metric"><small>Цена предложения б/у</small><strong>${money(reference?.price)}</strong></div><div class="metric"><small>Остаточная стоимость</small><strong>—</strong></div><div class="metric"><small>Объявлений</small><strong>${reference ? '1' : '—'}</strong></div><div class="metric"><small>Стартовая цена</small><strong>${money(msrp)}</strong></div></div><div class="panel-grid"><div class="panel"><h3>История цен</h3>${points.length ? `<svg class="chart" viewBox="0 0 100 180" preserveAspectRatio="none" role="img" aria-label="График истории цен"><line x1="0" y1="170" x2="100" y2="170"/><polyline points="${poly}"/></svg><p class="muted">Изменение: ${history.price_change_percent == null ? 'нет данных' : `${history.price_change_percent}%`}</p>` : '<p class="muted">История цен пока отсутствует.</p>'}</div><div class="panel"><h3>Прогноз</h3><p class="muted">Оценочный сценарий по профилю бренда, не прогноз обученной модели.</p><p class="muted">Для прогноза нужна выборка цен вторичного рынка.</p></div></div>${editions.length ? `<div class="panel"><h3>Версии и комплектации</h3><div class="table-scroll"><table class="comparison"><thead><tr><th>Версия</th><th>Память</th><th>Стартовая цена</th><th>Особенности</th></tr></thead><tbody>${editions.join('')}</tbody></table></div></div>` : ''}${renderReportControls(device.model_id)}`;
   $('report-format').addEventListener('change', (event) => { $('device-content').querySelector('.report-link').href = reportUrl(device.model_id, event.target.value); });
 }
 
@@ -122,17 +134,7 @@ async function showDevice(id, updateUrl = true) {
       api(`/devices/${encodeURIComponent(id)}`),
       api(`/devices/${encodeURIComponent(id)}/price-history?limit=12`).catch(() => ({ chart: [] }))
     ]);
-    let analytics = null;
-    let forecast = null;
-    let marketUnavailable = false;
-    try {
-      const data = await api(`/analytics/compare?model_ids=${encodeURIComponent(id)}&model_ids=${encodeURIComponent(id)}`);
-      analytics = data.devices[0];
-      if (analytics.current_price_rub != null) {
-        forecast = await api(`/forecast/${encodeURIComponent(id)}?current_price_rub=${analytics.current_price_rub}&months_horizon=6`);
-      }
-    } catch { marketUnavailable = true; }
-    renderDevice(device, analytics, forecast, history, marketUnavailable);
+    renderDevice(device, history);
     $('device-section').scrollIntoView();
   } catch (error) {
     $('device-error').textContent = error.message;
