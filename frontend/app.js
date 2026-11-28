@@ -6,9 +6,6 @@ const priceReferences = {
     { price: 27000, date: '25.11.2026', id: 'gqca3l' },
     { price: 15990, date: '04.11.2026', id: 'c60ppx' }
   ],
-  'apple-iphone-14': [
-    { price: 18990, date: '06.11.2026', id: 'bwy8vu' }
-  ],
   'apple-iphone-15': [
     { price: 29990, date: '26.11.2026', id: 'fgp5pm', note: 'при оплате наличными' },
     { price: 29990, date: '23.11.2026', id: 'xf5m7o', note: 'при оплате наличными' }
